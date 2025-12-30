@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Product Inquiry (Overseas)</title>
+  <title>Parnas Hotel Collection Product Inquiry</title>
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;background:#fafafa;}
     .wrap{max-width:920px;margin:0 auto;background:#fff;border:1px solid #eee;border-radius:12px;padding:20px;}
@@ -92,10 +92,11 @@
           <input type="text" name="shipping_destination" placeholder="e.g., Central / 999077" />
         </div>
         <div>
-          <label>Company / Name (optional)</label>
-          <input type="text" name="customer_name" placeholder="e.g., ABC Trading / John" />
+          <label>Company / Name</label>
+          <input type="text" name="customer_name" placeholder="e.g., ABC Trading / John" required />
         </div>
       </div>
+
 
       <label>Items</label>
       <div class="muted">Prices are estimates. Final quotation may vary based on availability/options.</div>
@@ -301,6 +302,7 @@
       const lines = [];
 
       items.forEach((item, idx) => {
+        const customerName = document.querySelector('input[name="customer_name"]').value || "-";
         const n = idx + 1;
         const productSel = item.querySelector('select.product');
         const qtyInput = item.querySelector('input.qty');
@@ -341,9 +343,7 @@
 
       // Summary saved to Netlify / shown in email
       const summary = [];
-      summary.push(`Preferred Language: EN`);
-      summary.push(`Preferred Currency: USD`);
-      summary.push(`FX Rate (KRW -> USD): ${fxRate ? fxRate : "N/A"}`);
+      summary.push(`Company/Name: ${customerName}`);
       summary.push(`Subtotal (KRW): ${subtotalKRW}`);
       summary.push(`Estimated Subtotal (USD): ${fxRate ? subtotalUSD : "N/A"}`);
       summary.push(`Shipping: NOT included (paid separately by customer)`);
