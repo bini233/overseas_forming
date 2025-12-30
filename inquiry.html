@@ -5,56 +5,57 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Product Inquiry (Overseas)</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; padding:24px; background:#fafafa;}
-    .wrap{max-width:880px; margin:0 auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:20px;}
-    h1{margin:0 0 6px; font-size:22px;}
-    p.sub{margin:0 0 18px; color:#666; font-size:14px; line-height:1.5;}
-    label{display:block; font-size:14px; margin:12px 0 6px;}
-    input,select,textarea{width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; box-sizing:border-box;}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;background:#fafafa;}
+    .wrap{max-width:920px;margin:0 auto;background:#fff;border:1px solid #eee;border-radius:12px;padding:20px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p.sub{margin:0 0 18px;color:#666;font-size:14px;line-height:1.5;}
+    label{display:block;font-size:14px;margin:12px 0 6px;}
+    input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;font-size:14px;box-sizing:border-box;}
     textarea{resize:vertical;}
-    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-    .items{display:flex; flex-direction:column; gap:10px; margin-top:10px;}
-    .item{padding:12px; border:1px solid #eee; border-radius:12px; background:#fcfcfc;}
-    .row{display:grid; grid-template-columns:1fr 120px 160px 160px 90px; gap:10px; align-items:end;}
-    .muted{color:#777; font-size:12px; line-height:1.4;}
-    .btns{display:flex; gap:10px; margin-top:12px;}
-    button{border:0; border-radius:10px; padding:10px 12px; font-size:14px; cursor:pointer;}
-    .btn-add{background:#111; color:#fff;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .items{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+    .item{padding:12px;border:1px solid #eee;border-radius:12px;background:#fcfcfc;}
+    .row{display:grid;grid-template-columns:1fr 120px 170px 170px 90px;gap:10px;align-items:end;}
+    .muted{color:#777;font-size:12px;line-height:1.4;}
+    .btns{display:flex;gap:10px;margin-top:12px;}
+    button{border:0;border-radius:10px;padding:10px 12px;font-size:14px;cursor:pointer;}
+    .btn-add{background:#111;color:#fff;}
     .btn-remove{background:#eee;}
-    .summary{margin-top:14px; padding:14px; border:1px solid #eee; border-radius:12px; background:#fff;}
-    .summaryRow{display:flex; justify-content:space-between; gap:10px; font-size:14px; padding:6px 0;}
-    .summaryRow strong{font-weight:700;}
-    .pill{display:inline-block; padding:4px 8px; border-radius:999px; background:#f1f1f1; font-size:12px; color:#444;}
-    .btn-submit{width:100%; margin-top:16px; background:#0a7; color:#fff; padding:12px;}
-    .warn{background:#fff8e1; border:1px solid #ffe4a3; padding:12px; border-radius:12px; margin-top:12px;}
+    .summary{margin-top:14px;padding:14px;border:1px solid #eee;border-radius:12px;background:#fff;}
+    .summaryRow{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f1f1f1;font-size:12px;color:#444;}
     .ok{color:#0a7;}
     .bad{color:#c00;}
-    @media (max-width:860px){
-      .row{grid-template-columns:1fr; }
-    }
+    .warn{background:#fff8e1;border:1px solid #ffe4a3;padding:12px;border-radius:12px;margin-top:12px;}
+    .btn-submit{width:100%;margin-top:16px;background:#0a7;color:#fff;padding:12px;}
+    @media (max-width:860px){ .row{grid-template-columns:1fr;} }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Product Inquiry (Overseas)</h1>
     <p class="sub">
-      Select products and quantities. You will see an estimated subtotal in your preferred currency.
-      <br/><span class="pill">Shipping is NOT included</span> — shipping fees, duties, and taxes will be quoted and paid separately.
+      Select products and quantities to request an estimated subtotal in <strong>USD</strong>.
+      <br><span class="pill">Shipping is NOT included</span> — shipping fees, duties, and taxes will be quoted and paid separately.
     </p>
 
     <!-- Netlify Forms -->
     <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks.html">
       <input type="hidden" name="form-name" value="product-inquiry" />
 
-      <!-- Hidden fields for Netlify 저장/메일 확인 -->
+      <!-- Fixed prefs (no selector) -->
+      <input type="hidden" name="preferred_language" value="EN" />
+      <input type="hidden" name="preferred_currency" value="USD" />
+
+      <!-- Hidden fields saved to Netlify -->
       <input type="hidden" name="items_count" id="items_count" value="2" />
       <textarea name="items_summary" id="items_summary" style="display:none;"></textarea>
 
-      <input type="hidden" name="fx_base" id="fx_base" value="KRW" />
-      <input type="hidden" name="fx_currency" id="fx_currency" value="USD" />
+      <input type="hidden" name="fx_base" value="KRW" />
+      <input type="hidden" name="fx_currency" value="USD" />
       <input type="hidden" name="fx_rate" id="fx_rate" value="" />
       <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
-      <input type="hidden" name="subtotal_converted" id="subtotal_converted" value="0" />
+      <input type="hidden" name="subtotal_usd" id="subtotal_usd" value="0" />
 
       <!-- Honeypot -->
       <p style="display:none;">
@@ -63,57 +64,41 @@
 
       <div class="grid2">
         <div>
-          <label>Preferred Language</label>
-          <select name="preferred_language" id="preferred_language" required>
+          <label>Destination Country</label>
+          <select name="country" id="country" required>
             <option value="" disabled selected>Select</option>
-            <option value="EN">English</option>
-            <option value="KO">Korean</option>
-            <option value="ZH">Chinese</option>
-            <option value="JA">Japanese</option>
+            <option value="US">United States</option>
+            <option value="HK">Hong Kong</option>
+            <option value="JP">Japan</option>
+            <option value="SG">Singapore</option>
+            <option value="TW">Taiwan</option>
+            <option value="CN">China</option>
+            <option value="EU">Europe (Other)</option>
+            <option value="KR">Korea</option>
+            <option value="OTHER">Other</option>
           </select>
+          <div class="muted" id="fx_status">Exchange rate (KRW → USD): <span class="pill">loading…</span></div>
         </div>
-        <div>
-          <label>Preferred Currency</label>
-          <select name="preferred_currency" id="preferred_currency" required>
-            <option value="" disabled selected>Select</option>
-            <option value="USD">USD</option>
-            <option value="HKD">HKD</option>
-            <option value="JPY">JPY</option>
-            <option value="EUR">EUR</option>
-            <option value="SGD">SGD</option>
-            <option value="KRW">KRW</option>
-          </select>
-          <div class="muted" id="fx_status">Exchange rate: <span class="pill">loading…</span></div>
-        </div>
-      </div>
 
-      <label>Destination Country</label>
-      <select name="country" id="country" required>
-        <option value="" disabled selected>Select</option>
-        <option value="US">United States</option>
-        <option value="HK">Hong Kong</option>
-        <option value="JP">Japan</option>
-        <option value="SG">Singapore</option>
-        <option value="TW">Taiwan</option>
-        <option value="CN">China</option>
-        <option value="EU">Europe (Other)</option>
-        <option value="KR">Korea</option>
-        <option value="OTHER">Other</option>
-      </select>
-
-      <div class="grid2">
         <div>
           <label>Contact Email</label>
           <input type="email" name="customer_email" placeholder="name@example.com" required />
         </div>
+      </div>
+
+      <div class="grid2">
         <div>
           <label>City / Postal Code (for shipping quote)</label>
           <input type="text" name="shipping_destination" placeholder="e.g., Central / 999077" />
         </div>
+        <div>
+          <label>Company / Name (optional)</label>
+          <input type="text" name="customer_name" placeholder="e.g., ABC Trading / John" />
+        </div>
       </div>
 
-      <label>Items (Multiple selection available)</label>
-      <div class="muted">Prices are shown as an estimate. Final quotation may differ based on availability/options.</div>
+      <label>Items</label>
+      <div class="muted">Prices are estimates. Final quotation may vary based on availability/options.</div>
 
       <div class="items" id="items">
         <!-- Item 1 -->
@@ -128,14 +113,14 @@
               <input type="number" name="item_1_qty" class="qty" min="1" step="1" value="1" required />
             </div>
             <div>
-              <label>Unit Price</label>
-              <input type="text" class="unit_display" value="-" disabled />
+              <label>Unit Price (USD)</label>
+              <input type="text" class="unit_display" value="—" disabled />
               <input type="hidden" name="item_1_unit_krw" class="unit_krw" value="0" />
             </div>
             <div>
-              <label>Line Total</label>
-              <input type="text" class="line_display" value="-" disabled />
-              <input type="hidden" name="item_1_line_total_converted" class="line_converted" value="0" />
+              <label>Line Total (USD)</label>
+              <input type="text" class="line_display" value="—" disabled />
+              <input type="hidden" name="item_1_line_total_usd" class="line_usd" value="0" />
             </div>
             <div>
               <button type="button" class="btn-remove" data-remove>Remove</button>
@@ -155,14 +140,14 @@
               <input type="number" name="item_2_qty" class="qty" min="1" step="1" value="1" required />
             </div>
             <div>
-              <label>Unit Price</label>
-              <input type="text" class="unit_display" value="-" disabled />
+              <label>Unit Price (USD)</label>
+              <input type="text" class="unit_display" value="—" disabled />
               <input type="hidden" name="item_2_unit_krw" class="unit_krw" value="0" />
             </div>
             <div>
-              <label>Line Total</label>
-              <input type="text" class="line_display" value="-" disabled />
-              <input type="hidden" name="item_2_line_total_converted" class="line_converted" value="0" />
+              <label>Line Total (USD)</label>
+              <input type="text" class="line_display" value="—" disabled />
+              <input type="hidden" name="item_2_line_total_usd" class="line_usd" value="0" />
             </div>
             <div>
               <button type="button" class="btn-remove" data-remove>Remove</button>
@@ -181,9 +166,10 @@
           <strong id="subtotalKRW">₩0</strong>
         </div>
         <div class="summaryRow">
-          <span>Estimated Subtotal (<span id="curLabel">USD</span>)</span>
-          <strong id="subtotalFX">$0</strong>
+          <span>Estimated Subtotal (USD)</span>
+          <strong id="subtotalUSD">$0</strong>
         </div>
+
         <div class="warn">
           <div><strong>Shipping Notice</strong></div>
           <div class="muted">
@@ -191,7 +177,7 @@
             They will be quoted separately and paid by the customer.
           </div>
           <label style="margin-top:10px;">
-            <input type="checkbox" name="shipping_confirm" required style="width:auto; margin-right:8px;">
+            <input type="checkbox" name="shipping_confirm" required style="width:auto;margin-right:8px;">
             I understand shipping/duties/taxes are not included and will be paid separately.
           </label>
         </div>
@@ -208,10 +194,7 @@
 
   <script>
     /**
-     * ✅ EDIT HERE: Product list & KRW prices
-     * - key: value saved to Netlify
-     * - label: what user sees
-     * - priceKRW: number (KRW)
+     * ✅ EDIT HERE: Product list & KRW prices (set real prices)
      */
     const PRODUCTS = [
       { key: "Mossy Wood Diffuser", label: "Mossy Wood Diffuser", priceKRW: 95,000 },
@@ -235,39 +218,30 @@
       { key: "Bath Towel Set(2ea)", label: "Bath Towel Set(2ea)", priceKRW: 115,000 },
       { key: "Face Towel Set(3ea)", label: "Face Towel Set(3ea)", priceKRW: 79,000 }
     ];
+;
 
     const itemsEl = document.getElementById('items');
     const addBtn = document.getElementById('addBtn');
-    const currencySel = document.getElementById('preferred_currency');
-    const langSel = document.getElementById('preferred_language');
     const fxStatus = document.getElementById('fx_status');
 
     const subtotalKRWEl = document.getElementById('subtotalKRW');
-    const subtotalFXEl  = document.getElementById('subtotalFX');
-    const curLabelEl    = document.getElementById('curLabel');
+    const subtotalUSDEl = document.getElementById('subtotalUSD');
 
-    // Hidden fields
-    const fxCurrencyHidden = document.getElementById('fx_currency');
-    const fxRateHidden     = document.getElementById('fx_rate');
-    const subtotalKRWHidden= document.getElementById('subtotal_krw');
-    const subtotalFXHidden = document.getElementById('subtotal_converted');
+    const fxRateHidden = document.getElementById('fx_rate');
+    const subtotalKRWHidden = document.getElementById('subtotal_krw');
+    const subtotalUSDHidden = document.getElementById('subtotal_usd');
     const itemsCountHidden = document.getElementById('items_count');
-    const itemsSummaryTA   = document.getElementById('items_summary');
+    const itemsSummaryTA = document.getElementById('items_summary');
 
-    let fxRate = null; // KRW -> selected currency
+    let fxRate = null; // KRW -> USD
 
-    function currencySymbol(code){
-      const map = { USD: "$", HKD: "HK$", JPY: "¥", EUR: "€", SGD: "S$", KRW: "₩" };
-      return map[code] || "";
+    function formatKRW(n){
+      try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
+      catch(e){ return `₩${Math.round(n)}`; }
     }
-
-    function formatMoney(amount, code){
-      // Use Intl for better formatting (fallback to simple)
-      try{
-        return new Intl.NumberFormat('en-US', { style:'currency', currency: code, maximumFractionDigits: (code==="JPY"||code==="KRW") ? 0 : 2 }).format(amount);
-      }catch(e){
-        return `${currencySymbol(code)}${Math.round(amount*100)/100}`;
-      }
+    function formatUSD(n){
+      try { return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits:2 }).format(n); }
+      catch(e){ return `$${Math.round(n*100)/100}`; }
     }
 
     function buildProductOptions(selectEl){
@@ -295,48 +269,24 @@
       return Number.isFinite(n) ? n : 0;
     }
 
-    async function fetchFXRate(toCurrency){
-      if(toCurrency === "KRW"){
-        fxRate = 1;
-        fxRateHidden.value = "1";
-        fxStatus.innerHTML = `Exchange rate: <span class="pill ok">1 KRW = 1 KRW</span>`;
-        return;
-      }
-
-      // Cache (localStorage) for reliability
-      const cacheKey = `fx_KRW_${toCurrency}`;
-      const cached = localStorage.getItem(cacheKey);
-      if(cached){
-        const { rate, ts } = JSON.parse(cached);
-        // 12h cache
-        if(rate && ts && (Date.now() - ts) < 12*60*60*1000){
-          fxRate = rate;
-          fxRateHidden.value = String(rate);
-          fxStatus.innerHTML = `Exchange rate: <span class="pill ok">1 KRW = ${rate} ${toCurrency} (cached)</span>`;
-          return;
-        }
-      }
-
-      fxStatus.innerHTML = `Exchange rate: <span class="pill">loading…</span>`;
+    async function fetchFXRateKRWtoUSD(){
+      fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill">loading…</span>`;
       try{
-        // exchangerate.host supports base & symbols
-        const url = `https://api.exchangerate.host/latest?base=KRW&symbols=${encodeURIComponent(toCurrency)}`;
+        // Free, static JSON via jsDelivr (daily updated-style)
+        // Response example: { "date": "...", "krw": { "usd": 0.0007... , ... } }
+        const url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/krw.json";
         const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();
-        const rate = data?.rates?.[toCurrency];
+        const rate = data?.krw?.usd;
 
-        if(!rate || !Number.isFinite(rate)){
-          throw new Error("No rate");
-        }
-
+        if(!rate || !Number.isFinite(rate)) throw new Error("No rate");
         fxRate = rate;
         fxRateHidden.value = String(rate);
-        localStorage.setItem(cacheKey, JSON.stringify({ rate, ts: Date.now() }));
-        fxStatus.innerHTML = `Exchange rate: <span class="pill ok">1 KRW = ${rate} ${toCurrency}</span>`;
-      }catch(err){
+        fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill ok">1 KRW = ${rate} USD</span>`;
+      }catch(e){
         fxRate = null;
         fxRateHidden.value = "";
-        fxStatus.innerHTML = `Exchange rate: <span class="pill bad">failed to load</span> (Please try again later)`;
+        fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill bad">unavailable</span> (KRW subtotal still saved)`;
       }
     }
 
@@ -344,102 +294,78 @@
       const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
       items.forEach((item, idx) => {
         const n = idx + 1;
-
-        const productSel = item.querySelector('select.product');
-        const qtyInput   = item.querySelector('input.qty');
-        const unitKrwH    = item.querySelector('input.unit_krw');
-        const lineConvH   = item.querySelector('input.line_converted');
-
-        productSel.name = `item_${n}_product`;
-        qtyInput.name   = `item_${n}_qty`;
-        unitKrwH.name   = `item_${n}_unit_krw`;
-        lineConvH.name  = `item_${n}_line_total_converted`;
+        item.querySelector('select.product').name = `item_${n}_product`;
+        item.querySelector('input.qty').name = `item_${n}_qty`;
+        item.querySelector('input.unit_krw').name = `item_${n}_unit_krw`;
+        item.querySelector('input.line_usd').name = `item_${n}_line_total_usd`;
       });
-
       itemsCountHidden.value = String(items.length);
     }
 
     function computeAndRender(){
-      const cur = currencySel.value || "USD";
-      curLabelEl.textContent = cur;
-      fxCurrencyHidden.value = cur;
-
       let subtotalKRW = 0;
-      let subtotalFX = 0;
+      let subtotalUSD = 0;
 
       const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
+      const lines = [];
 
-      items.forEach((item) => {
-        const productSel  = item.querySelector('select.product');
-        const qtyInput    = item.querySelector('input.qty');
-        const unitDisp    = item.querySelector('input.unit_display');
-        const lineDisp    = item.querySelector('input.line_display');
-        const unitKrwH    = item.querySelector('input.unit_krw');
-        const lineConvH   = item.querySelector('input.line_converted');
+      items.forEach((item, idx) => {
+        const n = idx + 1;
+        const productSel = item.querySelector('select.product');
+        const qtyInput = item.querySelector('input.qty');
+        const unitDisp = item.querySelector('input.unit_display');
+        const lineDisp = item.querySelector('input.line_display');
+        const unitKrwH = item.querySelector('input.unit_krw');
+        const lineUsdH = item.querySelector('input.line_usd');
 
         const qty = Math.max(1, Number(qtyInput.value || 1));
         const unitKRW = getSelectedPriceKRW(productSel);
         const lineKRW = unitKRW * qty;
 
         subtotalKRW += lineKRW;
-
-        // Display unit + line totals (FX if rate available)
         unitKrwH.value = String(unitKRW);
 
-        if(cur === "KRW" || fxRate === 1){
-          unitDisp.value = formatMoney(unitKRW, "KRW");
-          lineDisp.value = formatMoney(lineKRW, "KRW");
-          lineConvH.value = String(lineKRW);
-          subtotalFX += lineKRW;
-        }else if(fxRate && Number.isFinite(fxRate)){
-          const unitFX = unitKRW * fxRate;
-          const lineFX = lineKRW * fxRate;
-          unitDisp.value = formatMoney(unitFX, cur);
-          lineDisp.value = formatMoney(lineFX, cur);
-          lineConvH.value = String(lineFX);
-          subtotalFX += lineFX;
+        const p = productSel.value || "(not selected)";
+        lines.push(`${n}. ${p} x ${qty}`);
+
+        if(fxRate && Number.isFinite(fxRate)){
+          const unitUSD = unitKRW * fxRate;
+          const lineUSD = lineKRW * fxRate;
+          unitDisp.value = formatUSD(unitUSD);
+          lineDisp.value = formatUSD(lineUSD);
+          lineUsdH.value = String(lineUSD);
+          subtotalUSD += lineUSD;
         }else{
-          unitDisp.value = `${formatMoney(unitKRW, "KRW")} (KRW)`;
-          lineDisp.value = `${formatMoney(lineKRW, "KRW")} (KRW)`;
-          lineConvH.value = "0";
+          unitDisp.value = "—";
+          lineDisp.value = "—";
+          lineUsdH.value = "0";
         }
       });
 
-      subtotalKRWEl.textContent = formatMoney(subtotalKRW, "KRW");
-      subtotalFXEl.textContent  = (cur==="KRW" || fxRate===1) ? formatMoney(subtotalKRW, "KRW")
-                         : (fxRate ? formatMoney(subtotalFX, cur) : "—");
+      subtotalKRWEl.textContent = formatKRW(subtotalKRW);
+      subtotalUSDEl.textContent = (fxRate ? formatUSD(subtotalUSD) : "—");
 
       subtotalKRWHidden.value = String(subtotalKRW);
-      subtotalFXHidden.value  = fxRate ? String(subtotalFX) : "0";
+      subtotalUSDHidden.value = (fxRate ? String(subtotalUSD) : "0");
 
-      // Summary for email/Netlify
-      const lines = [];
-      lines.push(`Preferred Language: ${langSel.value || "-"}`);
-      lines.push(`Preferred Currency: ${cur}`);
-      lines.push(`FX Rate (KRW -> ${cur}): ${fxRate ? fxRate : "N/A"}`);
-      lines.push(`Subtotal (KRW): ${subtotalKRW}`);
-      lines.push(`Estimated Subtotal (${cur}): ${fxRate ? subtotalFX : "N/A"}`);
-      lines.push(`Shipping: NOT included (paid separately by customer)`);
-      lines.push(`--- Items ---`);
-
-      items.forEach((item, idx) => {
-        const n = idx + 1;
-        const productSel = item.querySelector('select.product');
-        const qtyInput = item.querySelector('input.qty');
-        const p = productSel.value || "(not selected)";
-        const q = qtyInput.value || "0";
-        lines.push(`${n}. ${p} x ${q}`);
-      });
-
-      itemsSummaryTA.value = lines.join('\n');
+      // Summary saved to Netlify / shown in email
+      const summary = [];
+      summary.push(`Preferred Language: EN`);
+      summary.push(`Preferred Currency: USD`);
+      summary.push(`FX Rate (KRW -> USD): ${fxRate ? fxRate : "N/A"}`);
+      summary.push(`Subtotal (KRW): ${subtotalKRW}`);
+      summary.push(`Estimated Subtotal (USD): ${fxRate ? subtotalUSD : "N/A"}`);
+      summary.push(`Shipping: NOT included (paid separately by customer)`);
+      summary.push(`--- Items ---`);
+      lines.forEach(l => summary.push(l));
+      itemsSummaryTA.value = summary.join("\n");
     }
 
     function wireItemEvents(item){
       const productSel = item.querySelector('select.product');
-      const qtyInput   = item.querySelector('input.qty');
-
-      productSel.addEventListener('change', () => computeAndRender());
-      qtyInput.addEventListener('input', () => computeAndRender());
+      const qtyInput = item.querySelector('input.qty');
+      productSel.addEventListener('change', computeAndRender);
+      qtyInput.addEventListener('input', computeAndRender);
 
       const rmBtn = item.querySelector('[data-remove]');
       rmBtn.onclick = () => {
@@ -465,11 +391,9 @@
       const first = itemsEl.querySelector('[data-item]');
       const clone = first.cloneNode(true);
 
-      // Reset values
       const sel = clone.querySelector('select.product');
       const qty = clone.querySelector('input.qty');
       qty.value = "1";
-
       buildProductOptions(sel);
       sel.selectedIndex = 0;
 
@@ -481,31 +405,16 @@
 
     addBtn.addEventListener('click', addItem);
 
-    // Currency / language changes
-    currencySel.addEventListener('change', async () => {
-      const cur = currencySel.value;
-      await fetchFXRate(cur);
-      computeAndRender();
-    });
-    langSel.addEventListener('change', () => computeAndRender());
-
-    // Submit hook: ensure everything up-to-date
+    // Submit hook
     document.querySelector('form[name="product-inquiry"]').addEventListener('submit', () => {
       renumberNames();
       computeAndRender();
     });
 
-    // Defaults
-    // Auto defaults based on common overseas usage (can change)
-    langSel.value = "EN";
-    currencySel.value = "USD";
-
     // Init
     initExistingItems();
-
-    // Load FX and render
     (async () => {
-      await fetchFXRate(currencySel.value);
+      await fetchFXRateKRWtoUSD();
       computeAndRender();
     })();
   </script>
