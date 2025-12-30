@@ -35,6 +35,10 @@
     <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks.html">
       <input type="hidden" name="form-name" value="product-inquiry" />
 
+      <!-- ✅ Netlify가 "처음부터" 인식하도록 고정 필드로 선언 -->
+      <input type="hidden" name="items_count" id="items_count" value="2" />
+      <textarea name="items_summary" id="items_summary" style="display:none;"></textarea>
+
       <!-- 허니팟(스팸 방지) -->
       <p style="display:none;">
         <label>Don’t fill this out: <input name="bot-field" /></label>
@@ -49,7 +53,7 @@
           <div class="row">
             <div>
               <label>상품</label>
-              <select required>
+              <select name="item_1_product" required>
                 <option value="" disabled selected>선택</option>
                 <option value="Bedding Set">베딩 세트</option>
                 <option value="Duvet">이불</option>
@@ -63,7 +67,7 @@
             </div>
             <div>
               <label>수량</label>
-              <input type="number" min="1" step="1" value="1" required />
+              <input type="number" name="item_1_qty" min="1" step="1" value="1" required />
             </div>
             <div>
               <button type="button" class="btn-remove" data-remove>삭제</button>
@@ -75,7 +79,7 @@
           <div class="row">
             <div>
               <label>상품</label>
-              <select required>
+              <select name="item_2_product" required>
                 <option value="" disabled selected>선택</option>
                 <option value="Bedding Set">베딩 세트</option>
                 <option value="Duvet">이불</option>
@@ -89,7 +93,7 @@
             </div>
             <div>
               <label>수량</label>
-              <input type="number" min="1" step="1" value="1" required />
+              <input type="number" name="item_2_qty" min="1" step="1" value="1" required />
             </div>
             <div>
               <button type="button" class="btn-remove" data-remove>삭제</button>
@@ -130,74 +134,63 @@
   </div>
 
   <script>
-  const itemsEl = document.getElementById('items');
-  const addBtn = document.getElementById('addBtn');
+    const itemsEl = document.getElementById('items');
+    const addBtn = document.getElementById('addBtn');
 
-  function wireRemoveButtons() {
-    itemsEl.querySelectorAll('[data-remove]').forEach(btn => {
-      btn.onclick = () => {
-        const all = itemsEl.querySelectorAll('[data-item]');
-        if (all.length <= 1) return;
-        btn.closest('[data-item]').remove();
-      };
-    });
-  }
+    function renumberAndSummarize() {
+      const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
+      const lines = [];
 
-  function addItem() {
-    const first = itemsEl.querySelector('[data-item]');
-    const clone = first.cloneNode(true);
-    clone.querySelector('select').selectedIndex = 0;
-    clone.querySelector('input[type="number"]').value = 1;
-    itemsEl.appendChild(clone);
+      items.forEach((item, idx) => {
+        const n = idx + 1;
+        const productSel = item.querySelector('select');
+        const qtyInput = item.querySelector('input[type="number"]');
+
+        // ✅ 항상 name이 존재하도록 유지/갱신
+        productSel.name = `item_${n}_product`;
+        qtyInput.name = `item_${n}_qty`;
+
+        const p = productSel.value || '(미선택)';
+        const q = qtyInput.value || '0';
+        lines.push(`${n}. ${p} x ${q}`);
+      });
+
+      document.getElementById('items_count').value = String(items.length);
+      document.getElementById('items_summary').value = lines.join('\n');
+    }
+
+    function wireRemoveButtons() {
+      itemsEl.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.onclick = () => {
+          const all = itemsEl.querySelectorAll('[data-item]');
+          if (all.length <= 1) return;
+          btn.closest('[data-item]').remove();
+          renumberAndSummarize();
+          wireRemoveButtons();
+        };
+      });
+    }
+
+    function addItem() {
+      const first = itemsEl.querySelector('[data-item]');
+      const clone = first.cloneNode(true);
+      clone.querySelector('select').selectedIndex = 0;
+      clone.querySelector('input[type="number"]').value = 1;
+      itemsEl.appendChild(clone);
+      wireRemoveButtons();
+      renumberAndSummarize();
+    }
+
+    addBtn.addEventListener('click', addItem);
+
+    // 초기 세팅
     wireRemoveButtons();
-  }
+    renumberAndSummarize();
 
-  addBtn.addEventListener('click', addItem);
-  wireRemoveButtons();
-
-  function assignNamesAndSummary(form) {
-    const items = itemsEl.querySelectorAll('[data-item]');
-    const lines = [];
-
-    items.forEach((item, idx) => {
-      const n = idx + 1;
-      const productSel = item.querySelector('select');
-      const qtyInput = item.querySelector('input[type="number"]');
-
-      // ✅ Netlify에 저장될 필드명
-      productSel.name = `item_${n}_product`;
-      qtyInput.name = `item_${n}_qty`;
-
-      const p = productSel.value || '(미선택)';
-      const q = qtyInput.value || '0';
-      lines.push(`${n}. ${p} x ${q}`);
+    // 제출 직전에도 한 번 더 확정
+    document.querySelector('form[name="product-inquiry"]').addEventListener('submit', () => {
+      renumberAndSummarize();
     });
-
-    // ✅ 메일에서 한 번에 보기 좋게 "요약" 필드 추가
-    let summary = form.querySelector('textarea[name="items_summary"]');
-    if (!summary) {
-      summary = document.createElement('textarea');
-      summary.name = 'items_summary';
-      summary.style.display = 'none';
-      form.appendChild(summary);
-    }
-    summary.value = lines.join('\n');
-
-    // 아이템 개수도 같이
-    let countHidden = form.querySelector('input[name="items_count"]');
-    if (!countHidden) {
-      countHidden = document.createElement('input');
-      countHidden.type = 'hidden';
-      countHidden.name = 'items_count';
-      form.appendChild(countHidden);
-    }
-    countHidden.value = items.length;
-  }
-
-  document.querySelector('form[name="product-inquiry"]').addEventListener('submit', (e) => {
-    assignNamesAndSummary(e.target);
-  });
-</script>
-
+  </script>
 </body>
 </html>
