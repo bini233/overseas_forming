@@ -62,7 +62,7 @@
       <input type="hidden" name="email" id="email_replyto" value="" />
 
       <!-- ✅ Summary fields you want in email/submission -->
-      <input type="hidden" name="items_count" id="items_count" value="2" />
+      <input type="hidden" name="items_count" id="items_count" value="1" />
       <input type="hidden" name="total_qty" id="total_qty" value="0" />
 
       <!-- ✅ IMPORTANT: these were missing in your HTML (caused JS crash) -->
@@ -140,32 +140,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Item 2 -->
-        <div class="item" data-item>
-          <div class="row">
-            <div>
-              <label>Product</label>
-              <select name="item_2_product" class="product" required></select>
-            </div>
-            <div>
-              <label>Qty</label>
-              <input type="number" name="item_2_qty" class="qty" min="1" step="1" value="1" required />
-            </div>
-            <div>
-              <label>Unit Price (USD)</label>
-              <input type="text" class="unit_display" value="—" disabled />
-              <input type="hidden" name="item_2_unit_krw" class="unit_krw" value="0" />
-            </div>
-            <div>
-              <label>Line Total (USD)</label>
-              <input type="text" class="line_display" value="—" disabled />
-              <input type="hidden" name="item_2_line_total_usd" class="line_usd" value="0" />
-            </div>
-            <div>
-              <button type="button" class="btn-remove" data-remove>Remove</button>
-            </div>
-          </div>
         </div>
       </div>
 
