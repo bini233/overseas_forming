@@ -70,7 +70,6 @@
             <option value="TW">Taiwan</option>
             <option value="CN">China</option>
             <option value="EU">Europe (Other)</option>
-            <option value="KR">Korea</option>
             <option value="OTHER">Other</option>
           </select>
           <div class="muted" id="fx_status">Exchange rate (KRW → USD): <span class="pill">loading…</span></div>
@@ -347,16 +346,15 @@
       subtotalKRWDispHidden.value = formatKRW(subtotalKRWInt);
       subtotalUSDDispHidden.value = (fxRate ? formatUSD(subtotalUSDRounded) : "");
 
-      // 요약(메일에서 이거만 봐도 되게)
+      // 요약(메일상의 요약 부분)
       itemsSummaryHidden.value =
-        `Items Count: ${items.length}\n` +
-        `Total Qty: ${totalQty}\n` +
-        `Subtotal Krw: ${subtotalKRWHidden.value}\n` +
-        `Subtotal Krw (Display): ${subtotalKRWDispHidden.value}\n` +
-        `Subtotal Usd: ${subtotalUSDHidden.value}\n` +
-        `Subtotal Usd (Display): ${subtotalUSDDispHidden.value}\n` +
         `Customer Name: ${customerName}\n` +
-        `Items: ${lines.join(" / ")}`;
+        `Country: ${country}\n` +
+        `Contact Email: ${customer_email}\n`+
+        `Total Qty: ${totalQty}\n` +
+        `Subtotal Krw (Display): ${subtotalKRWDispHidden.value}\n` +
+        `Subtotal Usd (Display): ${subtotalUSDDispHidden.value}\n` +
+        `Items: ${lines.join(" & ")}`;
     }
 
     function wireItemEvents(item){
