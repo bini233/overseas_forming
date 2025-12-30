@@ -43,10 +43,10 @@
     <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks.html">
       <input type="hidden" name="form-name" value="product-inquiry" />
 
-      <!-- Hidden fields saved to Netlify -->
+      <!-- ✅ 메일에 남길 요약 필드들만 -->
+      <input type="hidden" name="items_count" id="items_count" value="2" />
       <input type="hidden" name="total_qty" id="total_qty" value="0" />
       <input type="hidden" name="items_summary" id="items_summary" value="" />
-
       <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
       <input type="hidden" name="subtotal_usd" id="subtotal_usd" value="0" />
 
@@ -89,7 +89,6 @@
           <input type="text" name="customer_name" placeholder="e.g., ABC Trading / John" required />
         </div>
       </div>
-
 
       <label>Items</label>
       <div class="muted">Prices are estimates. Final quotation may vary based on availability/options.</div>
@@ -181,15 +180,12 @@
       <textarea name="message" rows="5" placeholder="Size / option / desired delivery time / special requests"></textarea>
 
       <input type="hidden" name="_meta" value="New product inquiry_oversea" />
-
       <button type="submit" class="btn-submit">Submit</button>
     </form>
   </div>
 
   <script>
-    /**
-     * ✅ EDIT HERE: Product list & KRW prices (set real prices)
-     */
+    // ✅ Product list & KRW prices
     const PRODUCTS = [
       { key: "Goosedown Duvet Set King Size", label: "Goosedown Duvet Set King Size", priceKRW: 1750000 },
       { key: "Goosedown Duvet Set Queen Size", label: "Goosedown Duvet Set Queen Size", priceKRW: 1680000 },
@@ -203,7 +199,6 @@
       { key: "Bath Towel Set(2ea)", label: "Bath Towel Set(2ea)", priceKRW: 115000 },
       { key: "Face Towel Set(3ea)", label: "Face Towel Set(3ea)", priceKRW: 79000 }
     ];
-;
 
     const itemsEl = document.getElementById('items');
     const addBtn = document.getElementById('addBtn');
@@ -212,13 +207,13 @@
     const subtotalKRWEl = document.getElementById('subtotalKRW');
     const subtotalUSDEl = document.getElementById('subtotalUSD');
 
-    const fxRateHidden = document.getElementById('fx_rate');
     const subtotalKRWHidden = document.getElementById('subtotal_krw');
     const subtotalUSDHidden = document.getElementById('subtotal_usd');
+    const totalQtyHidden = document.getElementById('total_qty');
     const itemsCountHidden = document.getElementById('items_count');
-    const itemsSummaryTA = document.getElementById('items_summary');
+    const itemsSummaryHidden = document.getElementById('items_summary');
 
-    let fxRate = null; // KRW -> USD
+    let fxRate = null; // KRW -> USD (UI/계산용, 폼 제출 X)
 
     function formatKRW(n){
       try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
@@ -257,8 +252,6 @@
     async function fetchFXRateKRWtoUSD(){
       fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill">loading…</span>`;
       try{
-        // Free, static JSON via jsDelivr (daily updated-style)
-        // Response example: { "date": "...", "krw": { "usd": 0.0007... , ... } }
         const url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/krw.json";
         const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();
@@ -266,11 +259,9 @@
 
         if(!rate || !Number.isFinite(rate)) throw new Error("No rate");
         fxRate = rate;
-        fxRateHidden.value = String(rate);
         fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill ok">1 KRW = ${rate} USD</span>`;
       }catch(e){
         fxRate = null;
-        fxRateHidden.value = "";
         fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill bad">unavailable</span> (KRW subtotal still saved)`;
       }
     }
@@ -288,22 +279,15 @@
     }
 
     function computeAndRender(){
+      const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
+      const customerName = document.querySelector('input[name="customer_name"]').value || "-";
+
       let subtotalKRW = 0;
       let subtotalUSD = 0;
       let totalQty = 0;
-      items.forEach((item, idx) => {
-        const qty = Math.max(1, Number(qtyInput.value || 1));
-        totalQty += qty;
-        ...
-      });
-
-document.getElementById('total_qty').value = String(totalQty);
-
-      const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
       const lines = [];
 
       items.forEach((item, idx) => {
-        const customerName = document.querySelector('input[name="customer_name"]').value || "-";
         const n = idx + 1;
         const productSel = item.querySelector('select.product');
         const qtyInput = item.querySelector('input.qty');
@@ -313,6 +297,8 @@ document.getElementById('total_qty').value = String(totalQty);
         const lineUsdH = item.querySelector('input.line_usd');
 
         const qty = Math.max(1, Number(qtyInput.value || 1));
+        totalQty += qty;
+
         const unitKRW = getSelectedPriceKRW(productSel);
         const lineKRW = unitKRW * qty;
 
@@ -336,21 +322,25 @@ document.getElementById('total_qty').value = String(totalQty);
         }
       });
 
+      // 화면 표시
       subtotalKRWEl.textContent = formatKRW(subtotalKRW);
       subtotalUSDEl.textContent = (fxRate ? formatUSD(subtotalUSD) : "—");
 
+      // 폼 저장(메일/Netlify submissions)
       subtotalKRWHidden.value = String(subtotalKRW);
       subtotalUSDHidden.value = (fxRate ? String(subtotalUSD) : "0");
+      totalQtyHidden.value = String(totalQty);
 
-      // Summary saved to Netlify / shown in email
+      // ✅ items_summary는 메일에서 잘 보이게 "한 줄" 추천
       const summary = [];
       summary.push(`Company/Name: ${customerName}`);
-      summary.push(`Subtotal (KRW): ${subtotalKRW}`);
-      summary.push(`Estimated Subtotal (USD): ${fxRate ? subtotalUSD : "N/A"}`);
-      summary.push(`Shipping: NOT included (paid separately by customer)`);
-      summary.push(`--- Items ---`);
-      lines.forEach(l => summary.push(l));
-      itemsSummaryTA.value = summary.join("\n");
+      summary.push(`Items Count: ${items.length}`);
+      summary.push(`Total Qty: ${totalQty}`);
+      summary.push(`Subtotal KRW: ${subtotalKRW}`);
+      summary.push(`Subtotal USD: ${fxRate ? subtotalUSD : "N/A"}`);
+      summary.push(`Shipping: NOT included (paid separately)`);
+      summary.push(`Items: ${lines.join(" / ")}`);
+      itemsSummaryHidden.value = summary.join(" | ");
     }
 
     function wireItemEvents(item){
@@ -397,7 +387,8 @@ document.getElementById('total_qty').value = String(totalQty);
 
     addBtn.addEventListener('click', addItem);
 
-    // Submit hook
+    document.querySelector('input[name="customer_name"]').addEventListener('input', computeAndRender);
+
     document.querySelector('form[name="product-inquiry"]').addEventListener('submit', () => {
       renumberNames();
       computeAndRender();
