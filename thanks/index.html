@@ -7,67 +7,31 @@
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;background:#fafafa;}
     .wrap{max-width:920px;margin:0 auto;background:#fff;border:1px solid #eee;border-radius:12px;padding:24px;}
-    .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#f1f1f1;font-size:12px;color:#444;margin-bottom:12px;}
     h1{margin:0 0 8px;font-size:22px;}
     p{margin:0;color:#666;font-size:14px;line-height:1.6;}
     .card{margin-top:16px;padding:16px;border:1px solid #eee;border-radius:12px;background:#fcfcfc;}
-    .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:14px;}
-    .row:last-child{border-bottom:0;}
-    .muted{color:#777;font-size:12px;line-height:1.5;margin-top:10px;}
     .btns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
     a.btn{display:inline-block;text-decoration:none;border-radius:10px;padding:10px 12px;font-size:14px;}
-    .btn-primary{background:#0a7;color:#fff;}
-    .btn-secondary{background:#eee;color:#111;}
-    .divider{height:1px;background:#eee;margin:18px 0;}
+    .primary{background:#0a7;color:#fff;}
+    .ghost{background:#eee;color:#111;}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f1f1f1;font-size:12px;color:#444;}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="badge">Submission Complete</div>
-    <h1>Thank you — your inquiry has been received.</h1>
-    <p>
-      We will review your request and get back to you shortly.
-      <br/>Shipping fees, duties, and taxes will be quoted separately.
-    </p>
+    <span class="pill">Submission Complete</span>
+    <h1>We’ve received your inquiry.</h1>
+    <p>Your request has been submitted successfully. Our team will review it and contact you shortly.</p>
 
-    <div class="card" id="summaryCard" style="display:none;">
-      <div class="row">
-        <span>Reference</span>
-        <strong id="refVal">—</strong>
-      </div>
-      <div class="row">
-        <span>Status</span>
-        <strong>Received</strong>
-      </div>
-      <div class="row">
-        <span>Next step</span>
-        <strong>We will contact you by email</strong>
-      </div>
-      <div class="muted" id="hintText"></div>
+    <div class="card">
+      <p><strong>Next step</strong></p>
+      <p>Please allow us some time to confirm availability and prepare a shipping quote (shipping/duties/taxes are paid separately).</p>
     </div>
-
-    <div class="divider"></div>
 
     <div class="btns">
-      <a class="btn btn-primary" href="/inquiry.html">Submit another inquiry</a>
-      <a class="btn btn-secondary" href="/">Back to home</a>
+      <a class="btn primary" href="/inquiry.html">Submit another inquiry</a>
+      <a class="btn ghost" href="/">Back to Home</a>
     </div>
-
-    <p class="muted" style="margin-top:14px;">
-      If you do not receive a response within 1–2 business days, please check your spam folder or contact us again.
-    </p>
   </div>
-
-  <script>
-    // Optional: show a simple reference from query string (?ref=XXXX) if you ever add it
-    const params = new URLSearchParams(location.search);
-    const ref = params.get('ref');
-    if(ref){
-      document.getElementById('summaryCard').style.display = 'block';
-      document.getElementById('refVal').textContent = ref;
-      document.getElementById('hintText').textContent =
-        "Keep this reference for faster support.";
-    }
-  </script>
 </body>
 </html>
