@@ -63,11 +63,17 @@
       <!-- ✅ Summary fields you want in email/submission -->
       <input type="hidden" name="items_count" id="items_count" value="2" />
       <input type="hidden" name="total_qty" id="total_qty" value="0" />
+
+      <!-- ✅ IMPORTANT: these were missing in your HTML (caused JS crash) -->
+      <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
+      <input type="hidden" name="subtotal_usd" id="subtotal_usd" value="0" />
+
       <input type="hidden" name="subtotal_krw_display" id="subtotal_krw_display" value="" />
       <input type="hidden" name="subtotal_usd_display" id="subtotal_usd_display" value="" />
 
-      <!-- ✅ items_summary: use textarea so line breaks are preserved -->
-      <textarea name="items_summary" id="items_summary" style="display:none;"></textarea>
+      <!-- ✅ items_summary: textarea to preserve line breaks -->
+      <!-- display:none sometimes still OK, but to be ultra-safe, move off-screen -->
+      <textarea name="items_summary" id="items_summary" style="position:absolute;left:-9999px;top:-9999px;"></textarea>
 
       <div class="grid2">
         <div>
@@ -221,8 +227,10 @@
 
     const itemsCountHidden = document.getElementById('items_count');
     const totalQtyHidden = document.getElementById('total_qty');
+
     const subtotalKRWHidden = document.getElementById('subtotal_krw');
     const subtotalUSDHidden = document.getElementById('subtotal_usd');
+
     const subtotalKRWDispHidden = document.getElementById('subtotal_krw_display');
     const subtotalUSDDispHidden = document.getElementById('subtotal_usd_display');
 
@@ -231,15 +239,13 @@
     const emailInput = document.getElementById('customer_email');
     const emailReplyToHidden = document.getElementById('email_replyto');
 
-    let fxRate = null; // KRW -> USD
+    let fxRate = null;
 
     function formatKRW(n){
-      // KRW: no decimals, with comma separators
       try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
       catch(e){ return `₩${Math.round(n)}`; }
     }
     function formatUSD(n){
-      // USD: 2 decimals
       try { return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n); }
       catch(e){ return `$${Math.round(n*100)/100}`; }
     }
@@ -306,7 +312,6 @@
       const emailVal = emailInput.value || "";
       const shipVal = document.getElementById('shipping_destination').value || "";
 
-      // set reply-to helper (name="email")
       emailReplyToHidden.value = emailVal;
 
       let subtotalKRW = 0;
@@ -342,9 +347,7 @@
           unitDisp.value = formatUSD(unitUSD);
           lineDisp.value = formatUSD(lineUSD);
 
-          // store numeric rounded 2 decimals
           lineUsdH.value = String(Math.round(lineUSD * 100) / 100);
-
           subtotalUSD += lineUSD;
         }else{
           unitDisp.value = "—";
@@ -362,13 +365,14 @@
       itemsCountHidden.value = String(items.length);
       totalQtyHidden.value = String(totalQty);
 
+      // ✅ now these exist, so no crash
       subtotalKRWHidden.value = String(subtotalKRWInt);
       subtotalUSDHidden.value = fxRate ? String(subtotalUSDRounded) : "0";
 
       subtotalKRWDispHidden.value = formatKRW(subtotalKRWInt);
       subtotalUSDDispHidden.value = fxRate ? formatUSD(subtotalUSDRounded) : "";
 
-      // items_summary with line breaks
+      // ✅ items_summary always set (line breaks preserved)
       itemsSummaryTA.value =
         `Customer Name: ${customerName}\n` +
         `Contact Email: ${emailVal}\n` +
@@ -432,19 +436,17 @@
 
     addBtn.addEventListener('click', addItem);
 
-    // update summary when these change
     document.getElementById('customer_name').addEventListener('input', computeAndRender);
     document.getElementById('country').addEventListener('change', computeAndRender);
     document.getElementById('shipping_destination').addEventListener('input', computeAndRender);
     emailInput.addEventListener('input', computeAndRender);
 
-    // IMPORTANT: before submit, compute fields (do NOT prevent default)
     form.addEventListener('submit', () => {
       renumberNames();
       computeAndRender();
+      // DO NOT preventDefault (let Netlify handle normal submit)
     });
 
-    // Init
     initExistingItems();
     (async () => {
       await fetchFXRateKRWtoUSD();
