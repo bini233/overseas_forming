@@ -63,8 +63,6 @@
       <!-- ✅ Summary fields you want in email/submission -->
       <input type="hidden" name="items_count" id="items_count" value="2" />
       <input type="hidden" name="total_qty" id="total_qty" value="0" />
-      <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
-      <input type="hidden" name="subtotal_usd" id="subtotal_usd" value="0" />
       <input type="hidden" name="subtotal_krw_display" id="subtotal_krw_display" value="" />
       <input type="hidden" name="subtotal_usd_display" id="subtotal_usd_display" value="" />
 
@@ -373,15 +371,15 @@
       // items_summary with line breaks
       itemsSummaryTA.value =
         `Customer Name: ${customerName}\n` +
-        `Country: ${countryVal}\n` +
         `Contact Email: ${emailVal}\n` +
+        `Country: ${countryVal}\n` +
         `Shipping Destination: ${shipVal}\n` +
         `Items Count: ${items.length}\n` +
         `Total Qty: ${totalQty}\n` +
         `Subtotal KRW: ${subtotalKRWDispHidden.value}\n` +
         `Subtotal USD: ${subtotalUSDDispHidden.value || "N/A"}\n` +
         `Shipping: NOT included (paid separately)\n` +
-        `Items: ${lines.join(" / ")}`;
+        `Items: ${lines.join(" & ")}`;
     }
 
     function wireItemEvents(item){
