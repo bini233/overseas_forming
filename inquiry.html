@@ -43,12 +43,15 @@
     <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks.html">
       <input type="hidden" name="form-name" value="product-inquiry" />
 
-      <!-- ✅ 메일에 남길 요약 필드들만 -->
+      <!-- ✅ 너가 메일에서 확인하고 싶은 요약 필드 -->
       <input type="hidden" name="items_count" id="items_count" value="2" />
       <input type="hidden" name="total_qty" id="total_qty" value="0" />
       <input type="hidden" name="items_summary" id="items_summary" value="" />
+
       <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
       <input type="hidden" name="subtotal_usd" id="subtotal_usd" value="0" />
+      <input type="hidden" name="subtotal_krw_display" id="subtotal_krw_display" value="" />
+      <input type="hidden" name="subtotal_usd_display" id="subtotal_usd_display" value="" />
 
       <!-- Honeypot -->
       <p style="display:none;">
@@ -160,7 +163,7 @@
         </div>
         <div class="summaryRow">
           <span>Estimated Subtotal (USD)</span>
-          <strong id="subtotalUSD">$0</strong>
+          <strong id="subtotalUSD">—</strong>
         </div>
 
         <div class="warn">
@@ -209,18 +212,21 @@
 
     const subtotalKRWHidden = document.getElementById('subtotal_krw');
     const subtotalUSDHidden = document.getElementById('subtotal_usd');
+    const subtotalKRWDispHidden = document.getElementById('subtotal_krw_display');
+    const subtotalUSDDispHidden = document.getElementById('subtotal_usd_display');
+
     const totalQtyHidden = document.getElementById('total_qty');
     const itemsCountHidden = document.getElementById('items_count');
     const itemsSummaryHidden = document.getElementById('items_summary');
 
-    let fxRate = null; // KRW -> USD (UI/계산용, 폼 제출 X)
+    let fxRate = null; // KRW -> USD
 
     function formatKRW(n){
       try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
       catch(e){ return `₩${Math.round(n)}`; }
     }
     function formatUSD(n){
-      try { return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits:2 }).format(n); }
+      try { return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n); }
       catch(e){ return `$${Math.round(n*100)/100}`; }
     }
 
@@ -311,9 +317,13 @@
         if(fxRate && Number.isFinite(fxRate)){
           const unitUSD = unitKRW * fxRate;
           const lineUSD = lineKRW * fxRate;
+
           unitDisp.value = formatUSD(unitUSD);
           lineDisp.value = formatUSD(lineUSD);
-          lineUsdH.value = String(lineUSD);
+
+          // 저장은 숫자로(2자리 반올림)
+          lineUsdH.value = String(Math.round(lineUSD * 100) / 100);
+
           subtotalUSD += lineUSD;
         }else{
           unitDisp.value = "—";
@@ -322,25 +332,31 @@
         }
       });
 
+      const subtotalKRWInt = Math.round(subtotalKRW);
+      const subtotalUSDRounded = (fxRate ? Math.round(subtotalUSD * 100) / 100 : 0);
+
       // 화면 표시
-      subtotalKRWEl.textContent = formatKRW(subtotalKRW);
-      subtotalUSDEl.textContent = (fxRate ? formatUSD(subtotalUSD) : "—");
+      subtotalKRWEl.textContent = formatKRW(subtotalKRWInt);
+      subtotalUSDEl.textContent = (fxRate ? formatUSD(subtotalUSDRounded) : "—");
 
       // 폼 저장(메일/Netlify submissions)
-      subtotalKRWHidden.value = String(subtotalKRW);
-      subtotalUSDHidden.value = (fxRate ? String(subtotalUSD) : "0");
+      subtotalKRWHidden.value = String(subtotalKRWInt);
+      subtotalUSDHidden.value = (fxRate ? String(subtotalUSDRounded) : "0");
       totalQtyHidden.value = String(totalQty);
 
-      // ✅ items_summary는 메일에서 잘 보이게 "한 줄" 추천
-      const summary = [];
-      summary.push(`Company/Name: ${customerName}`);
-      summary.push(`Items Count: ${items.length}`);
-      summary.push(`Total Qty: ${totalQty}`);
-      summary.push(`Subtotal KRW: ${subtotalKRW}`);
-      summary.push(`Subtotal USD: ${fxRate ? subtotalUSD : "N/A"}`);
-      summary.push(`Shipping: NOT included (paid separately)`);
-      summary.push(`Items: ${lines.join(" / ")}`);
-      itemsSummaryHidden.value = summary.join(" | ");
+      subtotalKRWDispHidden.value = formatKRW(subtotalKRWInt);
+      subtotalUSDDispHidden.value = (fxRate ? formatUSD(subtotalUSDRounded) : "");
+
+      // 요약(메일에서 이거만 봐도 되게)
+      itemsSummaryHidden.value =
+        `Items Count: ${items.length}\n` +
+        `Total Qty: ${totalQty}\n` +
+        `Subtotal Krw: ${subtotalKRWHidden.value}\n` +
+        `Subtotal Krw (Display): ${subtotalKRWDispHidden.value}\n` +
+        `Subtotal Usd: ${subtotalUSDHidden.value}\n` +
+        `Subtotal Usd (Display): ${subtotalUSDDispHidden.value}\n` +
+        `Customer Name: ${customerName}\n` +
+        `Items: ${lines.join(" / ")}`;
     }
 
     function wireItemEvents(item){
@@ -379,6 +395,12 @@
       buildProductOptions(sel);
       sel.selectedIndex = 0;
 
+      // display 필드 초기화
+      clone.querySelector('input.unit_display').value = "—";
+      clone.querySelector('input.line_display').value = "—";
+      clone.querySelector('input.unit_krw').value = "0";
+      clone.querySelector('input.line_usd').value = "0";
+
       itemsEl.appendChild(clone);
       wireItemEvents(clone);
       renumberNames();
@@ -386,7 +408,6 @@
     }
 
     addBtn.addEventListener('click', addItem);
-
     document.querySelector('input[name="customer_name"]').addEventListener('input', computeAndRender);
 
     document.querySelector('form[name="product-inquiry"]').addEventListener('submit', () => {
