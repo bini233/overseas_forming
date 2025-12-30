@@ -40,6 +40,7 @@
       <br><span class="pill">Shipping is NOT included</span> — shipping fees, duties, and taxes will be quoted and paid separately.
     </p>
 
+    <!-- Netlify Forms -->
     <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks/">
       <input type="hidden" name="form-name" value="product-inquiry" />
 
@@ -51,7 +52,7 @@
       <input type="hidden" name="subtotal_krw_display" id="subtotal_krw_display" value="" />
       <input type="hidden" name="subtotal_usd_display" id="subtotal_usd_display" value="" />
 
-      <!-- ✅ items_summary는 줄바꿈 잘 보이게 textarea로 -->
+      <!-- ✅ items_summary는 줄바꿈 보이게 textarea -->
       <textarea name="items_summary" id="items_summary" style="display:none;"></textarea>
 
       <!-- Honeypot -->
@@ -71,6 +72,7 @@
             <option value="TW">Taiwan</option>
             <option value="CN">China</option>
             <option value="EU">Europe (Other)</option>
+            <option value="KR">Korea</option>
             <option value="OTHER">Other</option>
           </select>
           <div class="muted" id="fx_status">Exchange rate (KRW → USD): <span class="pill">loading…</span></div>
@@ -192,6 +194,7 @@
   </div>
 
   <script>
+    // ✅ Product list & KRW prices
     const PRODUCTS = [
       { key: "Goosedown Duvet Set King Size", label: "Goosedown Duvet Set King Size", priceKRW: 1750000 },
       { key: "Goosedown Duvet Set Queen Size", label: "Goosedown Duvet Set Queen Size", priceKRW: 1680000 },
@@ -226,15 +229,13 @@
     const submitBtn = document.getElementById('submitBtn');
     const errBox = document.getElementById('errBox');
 
-    let fxRate = null; // KRW -> USD
+    let fxRate = null; // KRW -> USD (UI 계산용)
 
     function formatKRW(n){
-      // 회계 표기: 1,000원 형태 (KRW는 보통 소수점 없음)
       try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
       catch(e){ return `₩${Math.round(n)}`; }
     }
     function formatUSD(n){
-      // USD는 통상 소수점 2자리
       try { return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n); }
       catch(e){ return `$${Math.round(n*100)/100}`; }
     }
@@ -331,7 +332,6 @@
           const unitUSD = unitKRW * fxRate;
           const lineUSD = lineKRW * fxRate;
 
-          // 화면은 2자리 표시
           unitDisp.value = formatUSD(unitUSD);
           lineDisp.value = formatUSD(lineUSD);
 
@@ -346,14 +346,14 @@
         }
       });
 
-      const subtotalKRWInt = Math.round(subtotalKRW);                 // KRW: 정수
-      const subtotalUSDRounded = fxRate ? Math.round(subtotalUSD*100)/100 : 0; // USD: 2자리 반올림
+      const subtotalKRWInt = Math.round(subtotalKRW);
+      const subtotalUSDRounded = fxRate ? Math.round(subtotalUSD*100)/100 : 0;
 
-      // 화면 표시
+      // 화면
       subtotalKRWEl.textContent = formatKRW(subtotalKRWInt);
       subtotalUSDEl.textContent = fxRate ? formatUSD(subtotalUSDRounded) : "—";
 
-      // 폼 저장 (메일/Netlify submissions)
+      // 저장(메일/서브미션)
       itemsCountHidden.value = String(items.length);
       totalQtyHidden.value = String(totalQty);
 
@@ -363,7 +363,7 @@
       subtotalKRWDispHidden.value = formatKRW(subtotalKRWInt);
       subtotalUSDDispHidden.value = fxRate ? formatUSD(subtotalUSDRounded) : "";
 
-      // ✅ items_summary (메일에 잘 보이게 줄바꿈)
+      // ✅ items_summary (메일에 줄바꿈)
       itemsSummaryTA.value =
         `Customer Name: ${customerName}\n` +
         `Country: ${countryVal}\n` +
@@ -426,8 +426,20 @@
     }
 
     addBtn.addEventListener('click', addItem);
+    document.querySelector('input[name="customer_name"]').addEventListener('input', computeAndRender);
+    document.getElementById('country').addEventListener('change', computeAndRender);
+    document.querySelector('input[name="customer_email"]').addEventListener('input', computeAndRender);
+    document.querySelector('input[name="shipping_destination"]').addEventListener('input', computeAndRender);
 
-    // ✅ AJAX submit + 성공 시 /thanks/ 이동 (제출 후 404 방지)
+    // ✅ 안전버전: FormData → URLSearchParams 수동 변환
+    function encodeForm(form){
+      const fd = new FormData(form);
+      const params = new URLSearchParams();
+      for (const [k, v] of fd.entries()) params.append(k, v);
+      return params.toString();
+    }
+
+    // ✅ AJAX submit + 성공 시 /thanks/ 이동
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       errBox.style.display = "none";
@@ -437,8 +449,7 @@
         renumberNames();
         computeAndRender();
 
-        const fd = new FormData(form);
-        const body = new URLSearchParams(fd).toString();
+        const body = encodeForm(form);
 
         const res = await fetch("/", {
           method: "POST",
