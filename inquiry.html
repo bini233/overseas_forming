@@ -43,17 +43,10 @@
     <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks.html">
       <input type="hidden" name="form-name" value="product-inquiry" />
 
-      <!-- Fixed prefs (no selector) -->
-      <input type="hidden" name="preferred_language" value="EN" />
-      <input type="hidden" name="preferred_currency" value="USD" />
-
       <!-- Hidden fields saved to Netlify -->
-      <input type="hidden" name="items_count" id="items_count" value="2" />
+      <input type="hidden" name="total_qty" id="total_qty" value="0" />
       <input type="hidden" name="items_summary" id="items_summary" value="" />
 
-      <input type="hidden" name="fx_base" value="KRW" />
-      <input type="hidden" name="fx_currency" value="USD" />
-      <input type="hidden" name="fx_rate" id="fx_rate" value="" />
       <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
       <input type="hidden" name="subtotal_usd" id="subtotal_usd" value="0" />
 
@@ -297,6 +290,14 @@
     function computeAndRender(){
       let subtotalKRW = 0;
       let subtotalUSD = 0;
+      let totalQty = 0;
+      items.forEach((item, idx) => {
+        const qty = Math.max(1, Number(qtyInput.value || 1));
+        totalQty += qty;
+        ...
+      });
+
+document.getElementById('total_qty').value = String(totalQty);
 
       const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
       const lines = [];
