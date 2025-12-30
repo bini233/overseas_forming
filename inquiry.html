@@ -1,196 +1,513 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>상품 문의</title>
+  <title>Product Inquiry (Overseas)</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; margin:0; padding:24px; background:#fafafa;}
-    .wrap{max-width:760px; margin:0 auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:20px;}
-    h1{margin:0 0 8px; font-size:22px;}
-    p.sub{margin:0 0 18px; color:#666; font-size:14px;}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; padding:24px; background:#fafafa;}
+    .wrap{max-width:880px; margin:0 auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:20px;}
+    h1{margin:0 0 6px; font-size:22px;}
+    p.sub{margin:0 0 18px; color:#666; font-size:14px; line-height:1.5;}
     label{display:block; font-size:14px; margin:12px 0 6px;}
     input,select,textarea{width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; box-sizing:border-box;}
     textarea{resize:vertical;}
-    .row{display:grid; grid-template-columns:1fr 140px 90px; gap:10px; align-items:end;}
+    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
     .items{display:flex; flex-direction:column; gap:10px; margin-top:10px;}
     .item{padding:12px; border:1px solid #eee; border-radius:12px; background:#fcfcfc;}
-    .btns{display:flex; gap:10px; margin-top:14px;}
+    .row{display:grid; grid-template-columns:1fr 120px 160px 160px 90px; gap:10px; align-items:end;}
+    .muted{color:#777; font-size:12px; line-height:1.4;}
+    .btns{display:flex; gap:10px; margin-top:12px;}
     button{border:0; border-radius:10px; padding:10px 12px; font-size:14px; cursor:pointer;}
     .btn-add{background:#111; color:#fff;}
     .btn-remove{background:#eee;}
+    .summary{margin-top:14px; padding:14px; border:1px solid #eee; border-radius:12px; background:#fff;}
+    .summaryRow{display:flex; justify-content:space-between; gap:10px; font-size:14px; padding:6px 0;}
+    .summaryRow strong{font-weight:700;}
+    .pill{display:inline-block; padding:4px 8px; border-radius:999px; background:#f1f1f1; font-size:12px; color:#444;}
     .btn-submit{width:100%; margin-top:16px; background:#0a7; color:#fff; padding:12px;}
-    small{color:#777;}
-    @media (max-width:640px){
+    .warn{background:#fff8e1; border:1px solid #ffe4a3; padding:12px; border-radius:12px; margin-top:12px;}
+    .ok{color:#0a7;}
+    .bad{color:#c00;}
+    @media (max-width:860px){
       .row{grid-template-columns:1fr; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>상품 문의</h1>
-    <p class="sub">문의하실 상품과 수량을 입력하시면, 담당자가 확인 후 연락드립니다.</p>
+    <h1>Product Inquiry (Overseas)</h1>
+    <p class="sub">
+      Select products and quantities. You will see an estimated subtotal in your preferred currency.
+      <br/><span class="pill">Shipping is NOT included</span> — shipping fees, duties, and taxes will be quoted and paid separately.
+    </p>
 
     <!-- Netlify Forms -->
     <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks.html">
       <input type="hidden" name="form-name" value="product-inquiry" />
 
-      <!-- ✅ Netlify가 "처음부터" 인식하도록 고정 필드로 선언 -->
+      <!-- Hidden fields for Netlify 저장/메일 확인 -->
       <input type="hidden" name="items_count" id="items_count" value="2" />
       <textarea name="items_summary" id="items_summary" style="display:none;"></textarea>
 
-      <!-- 허니팟(스팸 방지) -->
+      <input type="hidden" name="fx_base" id="fx_base" value="KRW" />
+      <input type="hidden" name="fx_currency" id="fx_currency" value="USD" />
+      <input type="hidden" name="fx_rate" id="fx_rate" value="" />
+      <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
+      <input type="hidden" name="subtotal_converted" id="subtotal_converted" value="0" />
+
+      <!-- Honeypot -->
       <p style="display:none;">
         <label>Don’t fill this out: <input name="bot-field" /></label>
       </p>
 
-      <label>문의 품목 (여러 개 선택 가능)</label>
-      <small>“추가”를 눌러 상품/수량 줄을 늘릴 수 있습니다.</small>
+      <div class="grid2">
+        <div>
+          <label>Preferred Language</label>
+          <select name="preferred_language" id="preferred_language" required>
+            <option value="" disabled selected>Select</option>
+            <option value="EN">English</option>
+            <option value="KO">Korean</option>
+            <option value="ZH">Chinese</option>
+            <option value="JA">Japanese</option>
+          </select>
+        </div>
+        <div>
+          <label>Preferred Currency</label>
+          <select name="preferred_currency" id="preferred_currency" required>
+            <option value="" disabled selected>Select</option>
+            <option value="USD">USD</option>
+            <option value="HKD">HKD</option>
+            <option value="JPY">JPY</option>
+            <option value="EUR">EUR</option>
+            <option value="SGD">SGD</option>
+            <option value="KRW">KRW</option>
+          </select>
+          <div class="muted" id="fx_status">Exchange rate: <span class="pill">loading…</span></div>
+        </div>
+      </div>
+
+      <label>Destination Country</label>
+      <select name="country" id="country" required>
+        <option value="" disabled selected>Select</option>
+        <option value="US">United States</option>
+        <option value="HK">Hong Kong</option>
+        <option value="JP">Japan</option>
+        <option value="SG">Singapore</option>
+        <option value="TW">Taiwan</option>
+        <option value="CN">China</option>
+        <option value="EU">Europe (Other)</option>
+        <option value="KR">Korea</option>
+        <option value="OTHER">Other</option>
+      </select>
+
+      <div class="grid2">
+        <div>
+          <label>Contact Email</label>
+          <input type="email" name="customer_email" placeholder="name@example.com" required />
+        </div>
+        <div>
+          <label>City / Postal Code (for shipping quote)</label>
+          <input type="text" name="shipping_destination" placeholder="e.g., Central / 999077" />
+        </div>
+      </div>
+
+      <label>Items (Multiple selection available)</label>
+      <div class="muted">Prices are shown as an estimate. Final quotation may differ based on availability/options.</div>
 
       <div class="items" id="items">
-        <!-- 기본 2줄 제공 -->
+        <!-- Item 1 -->
         <div class="item" data-item>
           <div class="row">
             <div>
-              <label>상품</label>
-              <select name="item_1_product" required>
-                <option value="" disabled selected>선택</option>
-                <option value="Bedding Set">베딩 세트</option>
-                <option value="Duvet">이불</option>
-                <option value="Pillow">베개</option>
-                <option value="Sheet">베드시트</option>
-                <option value="Towel">타월</option>
-                <option value="Diffuser">디퓨저</option>
-                <option value="Candle">캔들</option>
-                <option value="Other">기타</option>
-              </select>
+              <label>Product</label>
+              <select name="item_1_product" class="product" required></select>
             </div>
             <div>
-              <label>수량</label>
-              <input type="number" name="item_1_qty" min="1" step="1" value="1" required />
+              <label>Qty</label>
+              <input type="number" name="item_1_qty" class="qty" min="1" step="1" value="1" required />
             </div>
             <div>
-              <button type="button" class="btn-remove" data-remove>삭제</button>
+              <label>Unit Price</label>
+              <input type="text" class="unit_display" value="-" disabled />
+              <input type="hidden" name="item_1_unit_krw" class="unit_krw" value="0" />
+            </div>
+            <div>
+              <label>Line Total</label>
+              <input type="text" class="line_display" value="-" disabled />
+              <input type="hidden" name="item_1_line_total_converted" class="line_converted" value="0" />
+            </div>
+            <div>
+              <button type="button" class="btn-remove" data-remove>Remove</button>
             </div>
           </div>
         </div>
 
+        <!-- Item 2 -->
         <div class="item" data-item>
           <div class="row">
             <div>
-              <label>상품</label>
-              <select name="item_2_product" required>
-                <option value="" disabled selected>선택</option>
-                <option value="Bedding Set">베딩 세트</option>
-                <option value="Duvet">이불</option>
-                <option value="Pillow">베개</option>
-                <option value="Sheet">베드시트</option>
-                <option value="Towel">타월</option>
-                <option value="Diffuser">디퓨저</option>
-                <option value="Candle">캔들</option>
-                <option value="Other">기타</option>
-              </select>
+              <label>Product</label>
+              <select name="item_2_product" class="product" required></select>
             </div>
             <div>
-              <label>수량</label>
-              <input type="number" name="item_2_qty" min="1" step="1" value="1" required />
+              <label>Qty</label>
+              <input type="number" name="item_2_qty" class="qty" min="1" step="1" value="1" required />
             </div>
             <div>
-              <button type="button" class="btn-remove" data-remove>삭제</button>
+              <label>Unit Price</label>
+              <input type="text" class="unit_display" value="-" disabled />
+              <input type="hidden" name="item_2_unit_krw" class="unit_krw" value="0" />
+            </div>
+            <div>
+              <label>Line Total</label>
+              <input type="text" class="line_display" value="-" disabled />
+              <input type="hidden" name="item_2_line_total_converted" class="line_converted" value="0" />
+            </div>
+            <div>
+              <button type="button" class="btn-remove" data-remove>Remove</button>
             </div>
           </div>
         </div>
       </div>
 
       <div class="btns">
-        <button type="button" class="btn-add" id="addBtn">+ 상품 추가</button>
+        <button type="button" class="btn-add" id="addBtn">+ Add item</button>
       </div>
 
-      <label>국가</label>
-      <select name="country" required>
-        <option value="" disabled selected>선택</option>
-        <option value="KR">대한민국</option>
-        <option value="JP">일본</option>
-        <option value="US">미국</option>
-        <option value="CN">중국</option>
-        <option value="SG">싱가포르</option>
-        <option value="HK">홍콩</option>
-        <option value="TW">대만</option>
-        <option value="EU">유럽(기타)</option>
-        <option value="OTHER">기타</option>
-      </select>
+      <div class="summary">
+        <div class="summaryRow">
+          <span>Subtotal (KRW)</span>
+          <strong id="subtotalKRW">₩0</strong>
+        </div>
+        <div class="summaryRow">
+          <span>Estimated Subtotal (<span id="curLabel">USD</span>)</span>
+          <strong id="subtotalFX">$0</strong>
+        </div>
+        <div class="warn">
+          <div><strong>Shipping Notice</strong></div>
+          <div class="muted">
+            Shipping fees, import duties, and taxes are <strong>not included</strong>.
+            They will be quoted separately and paid by the customer.
+          </div>
+          <label style="margin-top:10px;">
+            <input type="checkbox" name="shipping_confirm" required style="width:auto; margin-right:8px;">
+            I understand shipping/duties/taxes are not included and will be paid separately.
+          </label>
+        </div>
+      </div>
 
-      <label>연락 이메일</label>
-      <input type="email" name="customer_email" placeholder="hyebeen@parnas.co.kr" required />
+      <label>Additional Notes (optional)</label>
+      <textarea name="message" rows="5" placeholder="Size / option / desired delivery time / special requests"></textarea>
 
-      <label>추가 요청사항 (선택)</label>
-      <textarea name="message" rows="5" placeholder="사이즈/색상/납기/배송 방식 등"></textarea>
-
-      <!-- 이메일 제목용(알림 설정 시 참고하기 좋음) -->
       <input type="hidden" name="_meta" value="New product inquiry_oversea" />
 
-      <button type="submit" class="btn-submit">제출</button>
+      <button type="submit" class="btn-submit">Submit</button>
     </form>
   </div>
 
   <script>
+    /**
+     * ✅ EDIT HERE: Product list & KRW prices
+     * - key: value saved to Netlify
+     * - label: what user sees
+     * - priceKRW: number (KRW)
+     */
+    const PRODUCTS = [
+      { key: "Mossy Wood Diffuser", label: "Mossy Wood Diffuser", priceKRW: 95,000 },
+      { key: "Mossy Wood Candle", label: "Mossy Wood Candle", priceKRW: 93,000 },
+      { key: "Mossy Wood Roomspray", label: "Mossy Wood Roomspray", priceKRW: 88,000 },
+      { key: "Mint Forest Diffuser", label: "Mint Forest Diffuser", priceKRW: 95,000 },
+      { key: "Mint Forest Candle", label: "Mint Forest Candle", priceKRW: 93,000 },
+      { key: "Mint Forest Roomspray", label: "Mint Forest Roomspray", priceKRW: 88,000 },
+      { key: "White Bloom Diffuser", label: "White Bloom Diffuser", priceKRW: 95,000 },
+      { key: "White Bloom Candle", label: "White Bloom Candle", priceKRW: 93,000 },
+      { key: "White Bloom Roomspray", label: "White Bloom Roomspray", priceKRW: 88,000 },
+      { key: "Goosedown Duvet Set King Size", label: "Goosedown Duvet Set King Size", priceKRW: 1,750,000 },
+      { key: "Goosedown Duvet Set Queen Size", label: "Goosedown Duvet Set Queen Size", priceKRW: 1,680,000 },
+      { key: "Goosedown Duvet Set Single Size", label: "Goosedown Duvet Set Single Size", priceKRW: 1,400,000 },
+      { key: "Premium Goosedown Pillow Set", label: "Premium Goosedown Pillow Set", priceKRW: 460,000 },
+      { key: "Goosedown Pillow Set King Size", label: "Goosedown Pillow Set King Size", priceKRW: 395,000 },
+      { key: "Bed Sheet King Size", label: "Bed Sheet King Size", priceKRW: 270,000 },
+      { key: "Bed Sheet Queen Size", label: "Bed Sheet Queen Size", priceKRW: 250,000 },
+      { key: "Bed Sheet Single Size", label: "Bed Sheet Single Size", priceKRW: 210,000 },
+      { key: "Bathrobe", label: "Bathrobe", priceKRW: 185,000 },
+      { key: "Bath Towel Set(2ea)", label: "Bath Towel Set(2ea)", priceKRW: 115,000 },
+      { key: "Face Towel Set(3ea)", label: "Face Towel Set(3ea)", priceKRW: 79,000 }
+    ];
+
     const itemsEl = document.getElementById('items');
     const addBtn = document.getElementById('addBtn');
+    const currencySel = document.getElementById('preferred_currency');
+    const langSel = document.getElementById('preferred_language');
+    const fxStatus = document.getElementById('fx_status');
 
-    function renumberAndSummarize() {
+    const subtotalKRWEl = document.getElementById('subtotalKRW');
+    const subtotalFXEl  = document.getElementById('subtotalFX');
+    const curLabelEl    = document.getElementById('curLabel');
+
+    // Hidden fields
+    const fxCurrencyHidden = document.getElementById('fx_currency');
+    const fxRateHidden     = document.getElementById('fx_rate');
+    const subtotalKRWHidden= document.getElementById('subtotal_krw');
+    const subtotalFXHidden = document.getElementById('subtotal_converted');
+    const itemsCountHidden = document.getElementById('items_count');
+    const itemsSummaryTA   = document.getElementById('items_summary');
+
+    let fxRate = null; // KRW -> selected currency
+
+    function currencySymbol(code){
+      const map = { USD: "$", HKD: "HK$", JPY: "¥", EUR: "€", SGD: "S$", KRW: "₩" };
+      return map[code] || "";
+    }
+
+    function formatMoney(amount, code){
+      // Use Intl for better formatting (fallback to simple)
+      try{
+        return new Intl.NumberFormat('en-US', { style:'currency', currency: code, maximumFractionDigits: (code==="JPY"||code==="KRW") ? 0 : 2 }).format(amount);
+      }catch(e){
+        return `${currencySymbol(code)}${Math.round(amount*100)/100}`;
+      }
+    }
+
+    function buildProductOptions(selectEl){
+      selectEl.innerHTML = "";
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = "Select";
+      opt0.disabled = true;
+      opt0.selected = true;
+      selectEl.appendChild(opt0);
+
+      PRODUCTS.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.key;
+        opt.textContent = p.label;
+        opt.dataset.priceKrw = String(p.priceKRW);
+        selectEl.appendChild(opt);
+      });
+    }
+
+    function getSelectedPriceKRW(productSelect){
+      const opt = productSelect.options[productSelect.selectedIndex];
+      const raw = opt?.dataset?.priceKrw;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    async function fetchFXRate(toCurrency){
+      if(toCurrency === "KRW"){
+        fxRate = 1;
+        fxRateHidden.value = "1";
+        fxStatus.innerHTML = `Exchange rate: <span class="pill ok">1 KRW = 1 KRW</span>`;
+        return;
+      }
+
+      // Cache (localStorage) for reliability
+      const cacheKey = `fx_KRW_${toCurrency}`;
+      const cached = localStorage.getItem(cacheKey);
+      if(cached){
+        const { rate, ts } = JSON.parse(cached);
+        // 12h cache
+        if(rate && ts && (Date.now() - ts) < 12*60*60*1000){
+          fxRate = rate;
+          fxRateHidden.value = String(rate);
+          fxStatus.innerHTML = `Exchange rate: <span class="pill ok">1 KRW = ${rate} ${toCurrency} (cached)</span>`;
+          return;
+        }
+      }
+
+      fxStatus.innerHTML = `Exchange rate: <span class="pill">loading…</span>`;
+      try{
+        // exchangerate.host supports base & symbols
+        const url = `https://api.exchangerate.host/latest?base=KRW&symbols=${encodeURIComponent(toCurrency)}`;
+        const res = await fetch(url, { cache: "no-store" });
+        const data = await res.json();
+        const rate = data?.rates?.[toCurrency];
+
+        if(!rate || !Number.isFinite(rate)){
+          throw new Error("No rate");
+        }
+
+        fxRate = rate;
+        fxRateHidden.value = String(rate);
+        localStorage.setItem(cacheKey, JSON.stringify({ rate, ts: Date.now() }));
+        fxStatus.innerHTML = `Exchange rate: <span class="pill ok">1 KRW = ${rate} ${toCurrency}</span>`;
+      }catch(err){
+        fxRate = null;
+        fxRateHidden.value = "";
+        fxStatus.innerHTML = `Exchange rate: <span class="pill bad">failed to load</span> (Please try again later)`;
+      }
+    }
+
+    function renumberNames(){
       const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
+      items.forEach((item, idx) => {
+        const n = idx + 1;
+
+        const productSel = item.querySelector('select.product');
+        const qtyInput   = item.querySelector('input.qty');
+        const unitKrwH    = item.querySelector('input.unit_krw');
+        const lineConvH   = item.querySelector('input.line_converted');
+
+        productSel.name = `item_${n}_product`;
+        qtyInput.name   = `item_${n}_qty`;
+        unitKrwH.name   = `item_${n}_unit_krw`;
+        lineConvH.name  = `item_${n}_line_total_converted`;
+      });
+
+      itemsCountHidden.value = String(items.length);
+    }
+
+    function computeAndRender(){
+      const cur = currencySel.value || "USD";
+      curLabelEl.textContent = cur;
+      fxCurrencyHidden.value = cur;
+
+      let subtotalKRW = 0;
+      let subtotalFX = 0;
+
+      const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
+
+      items.forEach((item) => {
+        const productSel  = item.querySelector('select.product');
+        const qtyInput    = item.querySelector('input.qty');
+        const unitDisp    = item.querySelector('input.unit_display');
+        const lineDisp    = item.querySelector('input.line_display');
+        const unitKrwH    = item.querySelector('input.unit_krw');
+        const lineConvH   = item.querySelector('input.line_converted');
+
+        const qty = Math.max(1, Number(qtyInput.value || 1));
+        const unitKRW = getSelectedPriceKRW(productSel);
+        const lineKRW = unitKRW * qty;
+
+        subtotalKRW += lineKRW;
+
+        // Display unit + line totals (FX if rate available)
+        unitKrwH.value = String(unitKRW);
+
+        if(cur === "KRW" || fxRate === 1){
+          unitDisp.value = formatMoney(unitKRW, "KRW");
+          lineDisp.value = formatMoney(lineKRW, "KRW");
+          lineConvH.value = String(lineKRW);
+          subtotalFX += lineKRW;
+        }else if(fxRate && Number.isFinite(fxRate)){
+          const unitFX = unitKRW * fxRate;
+          const lineFX = lineKRW * fxRate;
+          unitDisp.value = formatMoney(unitFX, cur);
+          lineDisp.value = formatMoney(lineFX, cur);
+          lineConvH.value = String(lineFX);
+          subtotalFX += lineFX;
+        }else{
+          unitDisp.value = `${formatMoney(unitKRW, "KRW")} (KRW)`;
+          lineDisp.value = `${formatMoney(lineKRW, "KRW")} (KRW)`;
+          lineConvH.value = "0";
+        }
+      });
+
+      subtotalKRWEl.textContent = formatMoney(subtotalKRW, "KRW");
+      subtotalFXEl.textContent  = (cur==="KRW" || fxRate===1) ? formatMoney(subtotalKRW, "KRW")
+                         : (fxRate ? formatMoney(subtotalFX, cur) : "—");
+
+      subtotalKRWHidden.value = String(subtotalKRW);
+      subtotalFXHidden.value  = fxRate ? String(subtotalFX) : "0";
+
+      // Summary for email/Netlify
       const lines = [];
+      lines.push(`Preferred Language: ${langSel.value || "-"}`);
+      lines.push(`Preferred Currency: ${cur}`);
+      lines.push(`FX Rate (KRW -> ${cur}): ${fxRate ? fxRate : "N/A"}`);
+      lines.push(`Subtotal (KRW): ${subtotalKRW}`);
+      lines.push(`Estimated Subtotal (${cur}): ${fxRate ? subtotalFX : "N/A"}`);
+      lines.push(`Shipping: NOT included (paid separately by customer)`);
+      lines.push(`--- Items ---`);
 
       items.forEach((item, idx) => {
         const n = idx + 1;
-        const productSel = item.querySelector('select');
-        const qtyInput = item.querySelector('input[type="number"]');
-
-        // ✅ 항상 name이 존재하도록 유지/갱신
-        productSel.name = `item_${n}_product`;
-        qtyInput.name = `item_${n}_qty`;
-
-        const p = productSel.value || '(미선택)';
-        const q = qtyInput.value || '0';
+        const productSel = item.querySelector('select.product');
+        const qtyInput = item.querySelector('input.qty');
+        const p = productSel.value || "(not selected)";
+        const q = qtyInput.value || "0";
         lines.push(`${n}. ${p} x ${q}`);
       });
 
-      document.getElementById('items_count').value = String(items.length);
-      document.getElementById('items_summary').value = lines.join('\n');
+      itemsSummaryTA.value = lines.join('\n');
     }
 
-    function wireRemoveButtons() {
-      itemsEl.querySelectorAll('[data-remove]').forEach(btn => {
-        btn.onclick = () => {
-          const all = itemsEl.querySelectorAll('[data-item]');
-          if (all.length <= 1) return;
-          btn.closest('[data-item]').remove();
-          renumberAndSummarize();
-          wireRemoveButtons();
-        };
+    function wireItemEvents(item){
+      const productSel = item.querySelector('select.product');
+      const qtyInput   = item.querySelector('input.qty');
+
+      productSel.addEventListener('change', () => computeAndRender());
+      qtyInput.addEventListener('input', () => computeAndRender());
+
+      const rmBtn = item.querySelector('[data-remove]');
+      rmBtn.onclick = () => {
+        const all = itemsEl.querySelectorAll('[data-item]');
+        if(all.length <= 1) return;
+        item.remove();
+        renumberNames();
+        computeAndRender();
+      };
+    }
+
+    function initExistingItems(){
+      const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
+      items.forEach(item => {
+        const sel = item.querySelector('select.product');
+        buildProductOptions(sel);
+        wireItemEvents(item);
       });
+      renumberNames();
     }
 
-    function addItem() {
+    function addItem(){
       const first = itemsEl.querySelector('[data-item]');
       const clone = first.cloneNode(true);
-      clone.querySelector('select').selectedIndex = 0;
-      clone.querySelector('input[type="number"]').value = 1;
+
+      // Reset values
+      const sel = clone.querySelector('select.product');
+      const qty = clone.querySelector('input.qty');
+      qty.value = "1";
+
+      buildProductOptions(sel);
+      sel.selectedIndex = 0;
+
       itemsEl.appendChild(clone);
-      wireRemoveButtons();
-      renumberAndSummarize();
+      wireItemEvents(clone);
+      renumberNames();
+      computeAndRender();
     }
 
     addBtn.addEventListener('click', addItem);
 
-    // 초기 세팅
-    wireRemoveButtons();
-    renumberAndSummarize();
-
-    // 제출 직전에도 한 번 더 확정
-    document.querySelector('form[name="product-inquiry"]').addEventListener('submit', () => {
-      renumberAndSummarize();
+    // Currency / language changes
+    currencySel.addEventListener('change', async () => {
+      const cur = currencySel.value;
+      await fetchFXRate(cur);
+      computeAndRender();
     });
+    langSel.addEventListener('change', () => computeAndRender());
+
+    // Submit hook: ensure everything up-to-date
+    document.querySelector('form[name="product-inquiry"]').addEventListener('submit', () => {
+      renumberNames();
+      computeAndRender();
+    });
+
+    // Defaults
+    // Auto defaults based on common overseas usage (can change)
+    langSel.value = "EN";
+    currencySel.value = "USD";
+
+    // Init
+    initExistingItems();
+
+    // Load FX and render
+    (async () => {
+      await fetchFXRate(currencySel.value);
+      computeAndRender();
+    })();
   </script>
 </body>
 </html>
