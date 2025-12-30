@@ -28,7 +28,6 @@
     .bad{color:#c00;}
     .warn{background:#fff8e1;border:1px solid #ffe4a3;padding:12px;border-radius:12px;margin-top:12px;}
     .btn-submit{width:100%;margin-top:16px;background:#0a7;color:#fff;padding:12px;}
-    .err{display:none;margin-top:12px;padding:12px;border-radius:12px;border:1px solid #ffd1d1;background:#fff3f3;color:#8a0000;font-size:13px;}
     @media (max-width:860px){ .row{grid-template-columns:1fr;} }
   </style>
 </head>
@@ -40,11 +39,28 @@
       <br><span class="pill">Shipping is NOT included</span> — shipping fees, duties, and taxes will be quoted and paid separately.
     </p>
 
-    <!-- Netlify Forms -->
-    <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks/">
+    <!-- Netlify Forms (SAFE) -->
+    <form name="product-inquiry"
+          method="POST"
+          data-netlify="true"
+          netlify-honeypot="bot-field"
+          action="/thanks/">
+
+      <!-- required for Netlify -->
       <input type="hidden" name="form-name" value="product-inquiry" />
 
-      <!-- ✅ 메일에서 보고 싶은 요약 필드 -->
+      <!-- Optional: better email subject in notifications -->
+      <input type="hidden" name="subject" value="New Overseas Product Inquiry - Parnas Hotel Collection" />
+
+      <!-- Honeypot -->
+      <p style="display:none;">
+        <label>Don’t fill this out: <input name="bot-field" /></label>
+      </p>
+
+      <!-- ✅ Reply-to helper (Netlify recommends name="email") -->
+      <input type="hidden" name="email" id="email_replyto" value="" />
+
+      <!-- ✅ Summary fields you want in email/submission -->
       <input type="hidden" name="items_count" id="items_count" value="2" />
       <input type="hidden" name="total_qty" id="total_qty" value="0" />
       <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
@@ -52,13 +68,8 @@
       <input type="hidden" name="subtotal_krw_display" id="subtotal_krw_display" value="" />
       <input type="hidden" name="subtotal_usd_display" id="subtotal_usd_display" value="" />
 
-      <!-- ✅ items_summary는 줄바꿈 보이게 textarea -->
+      <!-- ✅ items_summary: use textarea so line breaks are preserved -->
       <textarea name="items_summary" id="items_summary" style="display:none;"></textarea>
-
-      <!-- Honeypot -->
-      <p style="display:none;">
-        <label>Don’t fill this out: <input name="bot-field" /></label>
-      </p>
 
       <div class="grid2">
         <div>
@@ -72,7 +83,6 @@
             <option value="TW">Taiwan</option>
             <option value="CN">China</option>
             <option value="EU">Europe (Other)</option>
-            <option value="KR">Korea</option>
             <option value="OTHER">Other</option>
           </select>
           <div class="muted" id="fx_status">Exchange rate (KRW → USD): <span class="pill">loading…</span></div>
@@ -80,18 +90,18 @@
 
         <div>
           <label>Contact Email</label>
-          <input type="email" name="customer_email" placeholder="name@example.com" required />
+          <input type="email" name="customer_email" id="customer_email" placeholder="name@example.com" required />
         </div>
       </div>
 
       <div class="grid2">
         <div>
           <label>City / Postal Code (for shipping quote)</label>
-          <input type="text" name="shipping_destination" placeholder="e.g., Central / 999077" />
+          <input type="text" name="shipping_destination" id="shipping_destination" placeholder="e.g., Central / 999077" />
         </div>
         <div>
           <label>Company / Name</label>
-          <input type="text" name="customer_name" placeholder="e.g., ABC Trading / John" required />
+          <input type="text" name="customer_name" id="customer_name" placeholder="e.g., ABC Trading / John" required />
         </div>
       </div>
 
@@ -184,17 +194,11 @@
       <label>Additional Notes (optional)</label>
       <textarea name="message" rows="5" placeholder="Size / option / desired delivery time / special requests"></textarea>
 
-      <input type="hidden" name="_meta" value="New product inquiry_oversea" />
-      <button type="submit" class="btn-submit" id="submitBtn">Submit</button>
-
-      <div class="err" id="errBox">
-        Submission failed. Please try again. If the issue persists, contact us by email.
-      </div>
+      <button type="submit" class="btn-submit">Submit</button>
     </form>
   </div>
 
   <script>
-    // ✅ Product list & KRW prices
     const PRODUCTS = [
       { key: "Goosedown Duvet Set King Size", label: "Goosedown Duvet Set King Size", priceKRW: 1750000 },
       { key: "Goosedown Duvet Set Queen Size", label: "Goosedown Duvet Set Queen Size", priceKRW: 1680000 },
@@ -217,25 +221,27 @@
     const subtotalKRWEl = document.getElementById('subtotalKRW');
     const subtotalUSDEl = document.getElementById('subtotalUSD');
 
+    const itemsCountHidden = document.getElementById('items_count');
+    const totalQtyHidden = document.getElementById('total_qty');
     const subtotalKRWHidden = document.getElementById('subtotal_krw');
     const subtotalUSDHidden = document.getElementById('subtotal_usd');
     const subtotalKRWDispHidden = document.getElementById('subtotal_krw_display');
     const subtotalUSDDispHidden = document.getElementById('subtotal_usd_display');
 
-    const totalQtyHidden = document.getElementById('total_qty');
-    const itemsCountHidden = document.getElementById('items_count');
     const itemsSummaryTA = document.getElementById('items_summary');
 
-    const submitBtn = document.getElementById('submitBtn');
-    const errBox = document.getElementById('errBox');
+    const emailInput = document.getElementById('customer_email');
+    const emailReplyToHidden = document.getElementById('email_replyto');
 
-    let fxRate = null; // KRW -> USD (UI 계산용)
+    let fxRate = null; // KRW -> USD
 
     function formatKRW(n){
+      // KRW: no decimals, with comma separators
       try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
       catch(e){ return `₩${Math.round(n)}`; }
     }
     function formatUSD(n){
+      // USD: 2 decimals
       try { return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n); }
       catch(e){ return `$${Math.round(n*100)/100}`; }
     }
@@ -297,10 +303,13 @@
     function computeAndRender(){
       const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
 
-      const customerName = document.querySelector('input[name="customer_name"]').value || "-";
+      const customerName = document.getElementById('customer_name').value || "-";
       const countryVal = document.getElementById('country').value || "";
-      const emailVal = document.querySelector('input[name="customer_email"]').value || "";
-      const shipVal = document.querySelector('input[name="shipping_destination"]').value || "";
+      const emailVal = emailInput.value || "";
+      const shipVal = document.getElementById('shipping_destination').value || "";
+
+      // set reply-to helper (name="email")
+      emailReplyToHidden.value = emailVal;
 
       let subtotalKRW = 0;
       let subtotalUSD = 0;
@@ -335,7 +344,7 @@
           unitDisp.value = formatUSD(unitUSD);
           lineDisp.value = formatUSD(lineUSD);
 
-          // 저장은 소수 2자리 반올림 숫자
+          // store numeric rounded 2 decimals
           lineUsdH.value = String(Math.round(lineUSD * 100) / 100);
 
           subtotalUSD += lineUSD;
@@ -349,11 +358,9 @@
       const subtotalKRWInt = Math.round(subtotalKRW);
       const subtotalUSDRounded = fxRate ? Math.round(subtotalUSD*100)/100 : 0;
 
-      // 화면
       subtotalKRWEl.textContent = formatKRW(subtotalKRWInt);
       subtotalUSDEl.textContent = fxRate ? formatUSD(subtotalUSDRounded) : "—";
 
-      // 저장(메일/서브미션)
       itemsCountHidden.value = String(items.length);
       totalQtyHidden.value = String(totalQty);
 
@@ -363,7 +370,7 @@
       subtotalKRWDispHidden.value = formatKRW(subtotalKRWInt);
       subtotalUSDDispHidden.value = fxRate ? formatUSD(subtotalUSDRounded) : "";
 
-      // ✅ items_summary (메일에 줄바꿈)
+      // items_summary with line breaks
       itemsSummaryTA.value =
         `Customer Name: ${customerName}\n` +
         `Country: ${countryVal}\n` +
@@ -426,43 +433,17 @@
     }
 
     addBtn.addEventListener('click', addItem);
-    document.querySelector('input[name="customer_name"]').addEventListener('input', computeAndRender);
+
+    // update summary when these change
+    document.getElementById('customer_name').addEventListener('input', computeAndRender);
     document.getElementById('country').addEventListener('change', computeAndRender);
-    document.querySelector('input[name="customer_email"]').addEventListener('input', computeAndRender);
-    document.querySelector('input[name="shipping_destination"]').addEventListener('input', computeAndRender);
+    document.getElementById('shipping_destination').addEventListener('input', computeAndRender);
+    emailInput.addEventListener('input', computeAndRender);
 
-    // ✅ 안전버전: FormData → URLSearchParams 수동 변환
-    function encodeForm(form){
-      const fd = new FormData(form);
-      const params = new URLSearchParams();
-      for (const [k, v] of fd.entries()) params.append(k, v);
-      return params.toString();
-    }
-
-    // ✅ AJAX submit + 성공 시 /thanks/ 이동
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errBox.style.display = "none";
-      submitBtn.disabled = true;
-
-      try{
-        renumberNames();
-        computeAndRender();
-
-        const body = encodeForm(form);
-
-        const res = await fetch("/", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body
-        });
-
-        if(!res.ok) throw new Error("Submit failed");
-        window.location.href = "/thanks/";
-      }catch(err){
-        errBox.style.display = "block";
-        submitBtn.disabled = false;
-      }
+    // IMPORTANT: before submit, compute fields (do NOT prevent default)
+    form.addEventListener('submit', () => {
+      renumberNames();
+      computeAndRender();
     });
 
     // Init
