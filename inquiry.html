@@ -28,6 +28,7 @@
     .bad{color:#c00;}
     .warn{background:#fff8e1;border:1px solid #ffe4a3;padding:12px;border-radius:12px;margin-top:12px;}
     .btn-submit{width:100%;margin-top:16px;background:#0a7;color:#fff;padding:12px;}
+    .err{display:none;margin-top:12px;padding:12px;border-radius:12px;border:1px solid #ffd1d1;background:#fff3f3;color:#8a0000;font-size:13px;}
     @media (max-width:860px){ .row{grid-template-columns:1fr;} }
   </style>
 </head>
@@ -39,21 +40,19 @@
       <br><span class="pill">Shipping is NOT included</span> — shipping fees, duties, and taxes will be quoted and paid separately.
     </p>
 
-    <!-- Netlify Forms -->
     <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks/">
-      <input type="hidden" name="form-name" value="product-inquiry" data-netlify="true"/>
+      <input type="hidden" name="form-name" value="product-inquiry" />
 
-      <!-- ✅ 메일에 남길 요약 필드들 -->
+      <!-- ✅ 메일에서 보고 싶은 요약 필드 -->
       <input type="hidden" name="items_count" id="items_count" value="2" />
       <input type="hidden" name="total_qty" id="total_qty" value="0" />
-
-      <!-- ✅ 줄바꿈 잘 보이게 textarea로 -->
-      <textarea name="items_summary" id="items_summary" style="display:none;"></textarea>
-
       <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
       <input type="hidden" name="subtotal_usd" id="subtotal_usd" value="0" />
       <input type="hidden" name="subtotal_krw_display" id="subtotal_krw_display" value="" />
       <input type="hidden" name="subtotal_usd_display" id="subtotal_usd_display" value="" />
+
+      <!-- ✅ items_summary는 줄바꿈 잘 보이게 textarea로 -->
+      <textarea name="items_summary" id="items_summary" style="display:none;"></textarea>
 
       <!-- Honeypot -->
       <p style="display:none;">
@@ -184,12 +183,15 @@
       <textarea name="message" rows="5" placeholder="Size / option / desired delivery time / special requests"></textarea>
 
       <input type="hidden" name="_meta" value="New product inquiry_oversea" />
-      <button type="submit" class="btn-submit">Submit</button>
+      <button type="submit" class="btn-submit" id="submitBtn">Submit</button>
+
+      <div class="err" id="errBox">
+        Submission failed. Please try again. If the issue persists, contact us by email.
+      </div>
     </form>
   </div>
 
   <script>
-    // ✅ Product list & KRW prices
     const PRODUCTS = [
       { key: "Goosedown Duvet Set King Size", label: "Goosedown Duvet Set King Size", priceKRW: 1750000 },
       { key: "Goosedown Duvet Set Queen Size", label: "Goosedown Duvet Set Queen Size", priceKRW: 1680000 },
@@ -205,7 +207,6 @@
     ];
 
     const form = document.querySelector('form[name="product-inquiry"]');
-
     const itemsEl = document.getElementById('items');
     const addBtn = document.getElementById('addBtn');
     const fxStatus = document.getElementById('fx_status');
@@ -222,24 +223,20 @@
     const itemsCountHidden = document.getElementById('items_count');
     const itemsSummaryTA = document.getElementById('items_summary');
 
+    const submitBtn = document.getElementById('submitBtn');
+    const errBox = document.getElementById('errBox');
+
     let fxRate = null; // KRW -> USD
 
     function formatKRW(n){
-      try {
-        return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n);
-      } catch(e){
-        return `₩${Math.round(n).toLocaleString()}`;
-      }
+      // 회계 표기: 1,000원 형태 (KRW는 보통 소수점 없음)
+      try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
+      catch(e){ return `₩${Math.round(n)}`; }
     }
-
     function formatUSD(n){
-      // 일반 결제/청구는 보통 소수점 2자리(센트) 기준 반올림
-      const rounded = Math.round((n + Number.EPSILON) * 100) / 100;
-      try {
-        return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(rounded);
-      } catch(e){
-        return `$${rounded.toFixed(2)}`;
-      }
+      // USD는 통상 소수점 2자리
+      try { return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n); }
+      catch(e){ return `$${Math.round(n*100)/100}`; }
     }
 
     function buildProductOptions(selectEl){
@@ -273,9 +270,9 @@
         const url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/krw.json";
         const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();
-        const rate = Number(data?.krw?.usd);
+        const rate = data?.krw?.usd;
 
-        if(!Number.isFinite(rate) || rate <= 0) throw new Error("No rate");
+        if(!rate || !Number.isFinite(rate)) throw new Error("No rate");
         fxRate = rate;
         fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill ok">1 KRW = ${rate} USD</span>`;
       }catch(e){
@@ -300,8 +297,9 @@
       const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
 
       const customerName = document.querySelector('input[name="customer_name"]').value || "-";
-      const country = document.querySelector('select[name="country"]').value || "-";
-      const customerEmail = document.querySelector('input[name="customer_email"]').value || "-";
+      const countryVal = document.getElementById('country').value || "";
+      const emailVal = document.querySelector('input[name="customer_email"]').value || "";
+      const shipVal = document.querySelector('input[name="shipping_destination"]').value || "";
 
       let subtotalKRW = 0;
       let subtotalUSD = 0;
@@ -333,12 +331,12 @@
           const unitUSD = unitKRW * fxRate;
           const lineUSD = lineKRW * fxRate;
 
+          // 화면은 2자리 표시
           unitDisp.value = formatUSD(unitUSD);
           lineDisp.value = formatUSD(lineUSD);
 
-          // 저장은 2자리 반올림 숫자
-          const lineUSD2 = Math.round((lineUSD + Number.EPSILON) * 100) / 100;
-          lineUsdH.value = String(lineUSD2);
+          // 저장은 소수 2자리 반올림 숫자
+          lineUsdH.value = String(Math.round(lineUSD * 100) / 100);
 
           subtotalUSD += lineUSD;
         }else{
@@ -348,34 +346,35 @@
         }
       });
 
-      const subtotalKRWInt = Math.round(subtotalKRW);
-      const subtotalUSD2 = (fxRate ? Math.round((subtotalUSD + Number.EPSILON) * 100) / 100 : 0);
+      const subtotalKRWInt = Math.round(subtotalKRW);                 // KRW: 정수
+      const subtotalUSDRounded = fxRate ? Math.round(subtotalUSD*100)/100 : 0; // USD: 2자리 반올림
 
       // 화면 표시
       subtotalKRWEl.textContent = formatKRW(subtotalKRWInt);
-      subtotalUSDEl.textContent = (fxRate ? formatUSD(subtotalUSD2) : "—");
+      subtotalUSDEl.textContent = fxRate ? formatUSD(subtotalUSDRounded) : "—";
 
-      // 폼 저장(메일/Netlify submissions)
-      subtotalKRWHidden.value = String(subtotalKRWInt);
-      subtotalUSDHidden.value = (fxRate ? String(subtotalUSD2) : "0");
-
-      subtotalKRWDispHidden.value = formatKRW(subtotalKRWInt);
-      subtotalUSDDispHidden.value = (fxRate ? formatUSD(subtotalUSD2) : "");
-
+      // 폼 저장 (메일/Netlify submissions)
+      itemsCountHidden.value = String(items.length);
       totalQtyHidden.value = String(totalQty);
 
-      // ✅ items_summary (메일에서 보고 싶은 요약)
-      const summaryLines = [
-        `Customer Name: ${customerName}`,
-        `Country: ${country}`,
-        `Contact Email: ${customerEmail}`,
-        `Items Count: ${items.length}`,
-        `Total Qty: ${totalQty}`,
-        `Subtotal KRW: ${subtotalKRWDispHidden.value}`,
-        `Subtotal USD: ${subtotalUSDDispHidden.value || "N/A"}`,
-        `Items: ${lines.join(" / ")}`
-      ];
-      itemsSummaryTA.value = summaryLines.join("\n");
+      subtotalKRWHidden.value = String(subtotalKRWInt);
+      subtotalUSDHidden.value = fxRate ? String(subtotalUSDRounded) : "0";
+
+      subtotalKRWDispHidden.value = formatKRW(subtotalKRWInt);
+      subtotalUSDDispHidden.value = fxRate ? formatUSD(subtotalUSDRounded) : "";
+
+      // ✅ items_summary (메일에 잘 보이게 줄바꿈)
+      itemsSummaryTA.value =
+        `Customer Name: ${customerName}\n` +
+        `Country: ${countryVal}\n` +
+        `Contact Email: ${emailVal}\n` +
+        `Shipping Destination: ${shipVal}\n` +
+        `Items Count: ${items.length}\n` +
+        `Total Qty: ${totalQty}\n` +
+        `Subtotal KRW: ${subtotalKRWDispHidden.value}\n` +
+        `Subtotal USD: ${subtotalUSDDispHidden.value || "N/A"}\n` +
+        `Shipping: NOT included (paid separately)\n` +
+        `Items: ${lines.join(" / ")}`;
     }
 
     function wireItemEvents(item){
@@ -411,7 +410,6 @@
 
       const sel = clone.querySelector('select.product');
       const qty = clone.querySelector('input.qty');
-
       qty.value = "1";
       buildProductOptions(sel);
       sel.selectedIndex = 0;
@@ -428,14 +426,32 @@
     }
 
     addBtn.addEventListener('click', addItem);
-    document.querySelector('input[name="customer_name"]').addEventListener('input', computeAndRender);
-    document.querySelector('input[name="customer_email"]').addEventListener('input', computeAndRender);
-    document.querySelector('select[name="country"]').addEventListener('change', computeAndRender);
 
-    // Submit hook (제출 직전에 최종 값 보장)
-    form.addEventListener('submit', () => {
-      renumberNames();
-      computeAndRender();
+    // ✅ AJAX submit + 성공 시 /thanks/ 이동 (제출 후 404 방지)
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errBox.style.display = "none";
+      submitBtn.disabled = true;
+
+      try{
+        renumberNames();
+        computeAndRender();
+
+        const fd = new FormData(form);
+        const body = new URLSearchParams(fd).toString();
+
+        const res = await fetch("/", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body
+        });
+
+        if(!res.ok) throw new Error("Submit failed");
+        window.location.href = "/thanks/";
+      }catch(err){
+        errBox.style.display = "block";
+        submitBtn.disabled = false;
+      }
     });
 
     // Init
