@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>상품 문의</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; margin:0; padding:24px; background:#fafafa;}
+    .wrap{max-width:760px; margin:0 auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:20px;}
+    h1{margin:0 0 8px; font-size:22px;}
+    p.sub{margin:0 0 18px; color:#666; font-size:14px;}
+    label{display:block; font-size:14px; margin:12px 0 6px;}
+    input,select,textarea{width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; box-sizing:border-box;}
+    textarea{resize:vertical;}
+    .row{display:grid; grid-template-columns:1fr 140px 90px; gap:10px; align-items:end;}
+    .items{display:flex; flex-direction:column; gap:10px; margin-top:10px;}
+    .item{padding:12px; border:1px solid #eee; border-radius:12px; background:#fcfcfc;}
+    .btns{display:flex; gap:10px; margin-top:14px;}
+    button{border:0; border-radius:10px; padding:10px 12px; font-size:14px; cursor:pointer;}
+    .btn-add{background:#111; color:#fff;}
+    .btn-remove{background:#eee;}
+    .btn-submit{width:100%; margin-top:16px; background:#0a7; color:#fff; padding:12px;}
+    small{color:#777;}
+    @media (max-width:640px){
+      .row{grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>상품 문의</h1>
+    <p class="sub">문의하실 상품과 수량을 입력하시면, 담당자가 확인 후 연락드립니다.</p>
+
+    <!-- Netlify Forms -->
+    <form name="product-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thanks.html">
+      <input type="hidden" name="form-name" value="product-inquiry" />
+
+      <!-- 허니팟(스팸 방지) -->
+      <p style="display:none;">
+        <label>Don’t fill this out: <input name="bot-field" /></label>
+      </p>
+
+      <label>문의 품목 (여러 개 선택 가능)</label>
+      <small>“추가”를 눌러 상품/수량 줄을 늘릴 수 있습니다.</small>
+
+      <div class="items" id="items">
+        <!-- 기본 2줄 제공 -->
+        <div class="item" data-item>
+          <div class="row">
+            <div>
+              <label>상품</label>
+              <select required>
+                <option value="" disabled selected>선택</option>
+                <option value="Bedding Set">베딩 세트</option>
+                <option value="Duvet">이불</option>
+                <option value="Pillow">베개</option>
+                <option value="Sheet">베드시트</option>
+                <option value="Towel">타월</option>
+                <option value="Diffuser">디퓨저</option>
+                <option value="Candle">캔들</option>
+                <option value="Other">기타</option>
+              </select>
+            </div>
+            <div>
+              <label>수량</label>
+              <input type="number" min="1" step="1" value="1" required />
+            </div>
+            <div>
+              <button type="button" class="btn-remove" data-remove>삭제</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="item" data-item>
+          <div class="row">
+            <div>
+              <label>상품</label>
+              <select required>
+                <option value="" disabled selected>선택</option>
+                <option value="Bedding Set">베딩 세트</option>
+                <option value="Duvet">이불</option>
+                <option value="Pillow">베개</option>
+                <option value="Sheet">베드시트</option>
+                <option value="Towel">타월</option>
+                <option value="Diffuser">디퓨저</option>
+                <option value="Candle">캔들</option>
+                <option value="Other">기타</option>
+              </select>
+            </div>
+            <div>
+              <label>수량</label>
+              <input type="number" min="1" step="1" value="1" required />
+            </div>
+            <div>
+              <button type="button" class="btn-remove" data-remove>삭제</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button type="button" class="btn-add" id="addBtn">+ 상품 추가</button>
+      </div>
+
+      <label>국가</label>
+      <select name="country" required>
+        <option value="" disabled selected>선택</option>
+        <option value="KR">대한민국</option>
+        <option value="JP">일본</option>
+        <option value="US">미국</option>
+        <option value="CN">중국</option>
+        <option value="SG">싱가포르</option>
+        <option value="HK">홍콩</option>
+        <option value="TW">대만</option>
+        <option value="EU">유럽(기타)</option>
+        <option value="OTHER">기타</option>
+      </select>
+
+      <label>연락 이메일</label>
+      <input type="email" name="customer_email" placeholder="hyebeen@parnas.co.kr" required />
+
+      <label>추가 요청사항 (선택)</label>
+      <textarea name="message" rows="5" placeholder="사이즈/색상/납기/배송 방식 등"></textarea>
+
+      <!-- 이메일 제목용(알림 설정 시 참고하기 좋음) -->
+      <input type="hidden" name="_meta" value="New product inquiry_oversea" />
+
+      <button type="submit" class="btn-submit">제출</button>
+    </form>
+  </div>
+
+  <script>
+    const itemsEl = document.getElementById('items');
+    const addBtn = document.getElementById('addBtn');
+
+    function wireRemoveButtons() {
+      itemsEl.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.onclick = () => {
+          const all = itemsEl.querySelectorAll('[data-item]');
+          // 최소 1줄은 남기기
+          if (all.length <= 1) return;
+          btn.closest('[data-item]').remove();
+        };
+      });
+    }
+
+    function addItem() {
+      const first = itemsEl.querySelector('[data-item]');
+      const clone = first.cloneNode(true);
+      // 값 초기화
+      clone.querySelector('select').selectedIndex = 0;
+      clone.querySelector('input[type="number"]').value = 1;
+      itemsEl.appendChild(clone);
+      wireRemoveButtons();
+    }
+
+    // 제출 직전에 Netlify가 수집하기 좋게 input/select에 name을 자동 부여
+    function assignFieldNamesBeforeSubmit(form) {
+      const items = itemsEl.querySelectorAll('[data-item]');
+      items.forEach((item, idx) => {
+        const n = idx + 1;
+        const productSel = item.querySelector('select');
+        const qtyInput = item.querySelector('input[type="number"]');
+        productSel.name = `item_${n}_product`;
+        qtyInput.name = `item_${n}_qty`;
+      });
+
+      // 총 아이템 개수도 같이 보내면 보기 편함
+      let countHidden = form.querySelector('input[name="items_count"]');
+      if (!countHidden) {
+        countHidden = document.createElement('input');
+        countHidden.type = 'hidden';
+        countHidden.name = 'items_count';
+        form.appendChild(countHidden);
+      }
+      countHidden.value = items.length;
+    }
+
+    addBtn.addEventListener('click', addItem);
+    wireRemoveButtons();
+
+    document.querySelector('form[name="product-inquiry"]').addEventListener('submit', (e) => {
+      assignFieldNamesBeforeSubmit(e.target);
+    });
+  </script>
+</body>
+</html>
