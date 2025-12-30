@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Parnas Hotel Collection Product Inquiry</title>
+  <title>Parnas Hotel Collection — Overseas Product Inquiry</title>
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;background:#fafafa;}
     .wrap{max-width:920px;margin:0 auto;background:#fff;border:1px solid #eee;border-radius:12px;padding:20px;}
@@ -33,9 +33,10 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Product Inquiry (Overseas)</h1>
+    <h1>Parnas Hotel Collection Product Inquiry (Overseas)</h1>
     <p class="sub">
-      Select products and quantities to request an estimated subtotal in <strong>USD</strong>.
+      <strong></strong>Thank you for your interest in Parnas Hotel Collection.</strong>
+      Select the products and quantities below to receive an estimated subtotal in <strong>USD</strong>.
       <br><span class="pill">Shipping is NOT included</span> — shipping fees, duties, and taxes will be quoted and paid separately.
     </p>
 
@@ -374,16 +375,19 @@
 
       // ✅ items_summary always set (line breaks preserved)
       itemsSummaryTA.value =
+        `=== CUSTOMER INFO ===\n` +
         `Customer Name: ${customerName}\n` +
         `Contact Email: ${emailVal}\n` +
         `Country: ${countryVal}\n` +
         `Shipping Destination: ${shipVal}\n` +
+        `=== ORDER SUMMARY ===\n` +
         `Items Count: ${items.length}\n` +
         `Total Qty: ${totalQty}\n` +
         `Subtotal KRW: ${subtotalKRWDispHidden.value}\n` +
         `Subtotal USD: ${subtotalUSDDispHidden.value || "N/A"}\n` +
         `Shipping: NOT included (paid separately)\n` +
-        `Items: ${lines.join(" & ")}`;
+        `=== ITEMS ===\n` +
+        `${lines.map(x => `- ${x}`).join("\n")}`;
     }
 
     function wireItemEvents(item){
