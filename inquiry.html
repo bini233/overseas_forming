@@ -130,58 +130,74 @@
   </div>
 
   <script>
-    const itemsEl = document.getElementById('items');
-    const addBtn = document.getElementById('addBtn');
+  const itemsEl = document.getElementById('items');
+  const addBtn = document.getElementById('addBtn');
 
-    function wireRemoveButtons() {
-      itemsEl.querySelectorAll('[data-remove]').forEach(btn => {
-        btn.onclick = () => {
-          const all = itemsEl.querySelectorAll('[data-item]');
-          // 최소 1줄은 남기기
-          if (all.length <= 1) return;
-          btn.closest('[data-item]').remove();
-        };
-      });
-    }
-
-    function addItem() {
-      const first = itemsEl.querySelector('[data-item]');
-      const clone = first.cloneNode(true);
-      // 값 초기화
-      clone.querySelector('select').selectedIndex = 0;
-      clone.querySelector('input[type="number"]').value = 1;
-      itemsEl.appendChild(clone);
-      wireRemoveButtons();
-    }
-
-    // 제출 직전에 Netlify가 수집하기 좋게 input/select에 name을 자동 부여
-    function assignFieldNamesBeforeSubmit(form) {
-      const items = itemsEl.querySelectorAll('[data-item]');
-      items.forEach((item, idx) => {
-        const n = idx + 1;
-        const productSel = item.querySelector('select');
-        const qtyInput = item.querySelector('input[type="number"]');
-        productSel.name = `item_${n}_product`;
-        qtyInput.name = `item_${n}_qty`;
-      });
-
-      // 총 아이템 개수도 같이 보내면 보기 편함
-      let countHidden = form.querySelector('input[name="items_count"]');
-      if (!countHidden) {
-        countHidden = document.createElement('input');
-        countHidden.type = 'hidden';
-        countHidden.name = 'items_count';
-        form.appendChild(countHidden);
-      }
-      countHidden.value = items.length;
-    }
-
-    addBtn.addEventListener('click', addItem);
-    wireRemoveButtons();
-
-    document.querySelector('form[name="product-inquiry"]').addEventListener('submit', (e) => {
-      assignFieldNamesBeforeSubmit(e.target);
+  function wireRemoveButtons() {
+    itemsEl.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.onclick = () => {
+        const all = itemsEl.querySelectorAll('[data-item]');
+        if (all.length <= 1) return;
+        btn.closest('[data-item]').remove();
+      };
     });
-  </script>
+  }
+
+  function addItem() {
+    const first = itemsEl.querySelector('[data-item]');
+    const clone = first.cloneNode(true);
+    clone.querySelector('select').selectedIndex = 0;
+    clone.querySelector('input[type="number"]').value = 1;
+    itemsEl.appendChild(clone);
+    wireRemoveButtons();
+  }
+
+  addBtn.addEventListener('click', addItem);
+  wireRemoveButtons();
+
+  function assignNamesAndSummary(form) {
+    const items = itemsEl.querySelectorAll('[data-item]');
+    const lines = [];
+
+    items.forEach((item, idx) => {
+      const n = idx + 1;
+      const productSel = item.querySelector('select');
+      const qtyInput = item.querySelector('input[type="number"]');
+
+      // ✅ Netlify에 저장될 필드명
+      productSel.name = `item_${n}_product`;
+      qtyInput.name = `item_${n}_qty`;
+
+      const p = productSel.value || '(미선택)';
+      const q = qtyInput.value || '0';
+      lines.push(`${n}. ${p} x ${q}`);
+    });
+
+    // ✅ 메일에서 한 번에 보기 좋게 "요약" 필드 추가
+    let summary = form.querySelector('textarea[name="items_summary"]');
+    if (!summary) {
+      summary = document.createElement('textarea');
+      summary.name = 'items_summary';
+      summary.style.display = 'none';
+      form.appendChild(summary);
+    }
+    summary.value = lines.join('\n');
+
+    // 아이템 개수도 같이
+    let countHidden = form.querySelector('input[name="items_count"]');
+    if (!countHidden) {
+      countHidden = document.createElement('input');
+      countHidden.type = 'hidden';
+      countHidden.name = 'items_count';
+      form.appendChild(countHidden);
+    }
+    countHidden.value = items.length;
+  }
+
+  document.querySelector('form[name="product-inquiry"]').addEventListener('submit', (e) => {
+    assignNamesAndSummary(e.target);
+  });
+</script>
+
 </body>
 </html>
