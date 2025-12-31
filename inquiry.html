@@ -24,8 +24,6 @@
     .summary{margin-top:14px;padding:14px;border:1px solid #eee;border-radius:12px;background:#fff;}
     .summaryRow{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;}
     .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f1f1f1;font-size:12px;color:#444;}
-    .ok{color:#0a7;}
-    .bad{color:#c00;}
     .warn{background:#fff8e1;border:1px solid #ffe4a3;padding:12px;border-radius:12px;margin-top:12px;}
     .btn-submit{width:100%;margin-top:16px;background:#0a7;color:#fff;padding:12px;}
     @media (max-width:860px){ .row{grid-template-columns:1fr;} }
@@ -35,8 +33,8 @@
   <div class="wrap">
     <h1>Parnas Hotel Collection Product Inquiry (Overseas)</h1>
     <p class="sub">
-      <strong></strong>Thank you for your interest in Parnas Hotel Collection.</strong>
-      Select the products and quantities below to receive an estimated subtotal in <strong>USD</strong>.
+      <strong>Thank you for your interest in Parnas Hotel Collection.</strong>
+      <br>Select the products and quantities below to receive a subtotal in <strong>KRW</strong>.
       <br><span class="pill">Shipping is NOT included</span> — shipping fees, duties, and taxes will be quoted and paid separately.
     </p>
 
@@ -65,15 +63,11 @@
       <input type="hidden" name="items_count" id="items_count" value="1" />
       <input type="hidden" name="total_qty" id="total_qty" value="0" />
 
-      <!-- ✅ IMPORTANT: these were missing in your HTML (caused JS crash) -->
+      <!-- KRW subtotal (numeric + display) -->
       <input type="hidden" name="subtotal_krw" id="subtotal_krw" value="0" />
-      <input type="hidden" name="subtotal_usd" id="subtotal_usd" value="0" />
-
       <input type="hidden" name="subtotal_krw_display" id="subtotal_krw_display" value="" />
-      <input type="hidden" name="subtotal_usd_display" id="subtotal_usd_display" value="" />
 
       <!-- ✅ items_summary: textarea to preserve line breaks -->
-      <!-- display:none sometimes still OK, but to be ultra-safe, move off-screen -->
       <textarea name="items_summary" id="items_summary" style="position:absolute;left:-9999px;top:-9999px;"></textarea>
 
       <div class="grid2">
@@ -90,7 +84,7 @@
             <option value="EU">Europe (Other)</option>
             <option value="OTHER">Other</option>
           </select>
-          <div class="muted" id="fx_status">Exchange rate (KRW → USD): <span class="pill">loading…</span></div>
+          <div class="muted">All prices are shown in KRW.</div>
         </div>
 
         <div>
@@ -126,14 +120,14 @@
               <input type="number" name="item_1_qty" class="qty" min="1" step="1" value="1" required />
             </div>
             <div>
-              <label>Unit Price (USD)</label>
+              <label>Unit Price (KRW)</label>
               <input type="text" class="unit_display" value="—" disabled />
               <input type="hidden" name="item_1_unit_krw" class="unit_krw" value="0" />
             </div>
             <div>
-              <label>Line Total (USD)</label>
+              <label>Line Total (KRW)</label>
               <input type="text" class="line_display" value="—" disabled />
-              <input type="hidden" name="item_1_line_total_usd" class="line_usd" value="0" />
+              <input type="hidden" name="item_1_line_total_krw" class="line_krw" value="0" />
             </div>
             <div>
               <button type="button" class="btn-remove" data-remove>Remove</button>
@@ -150,10 +144,6 @@
         <div class="summaryRow">
           <span>Subtotal (KRW)</span>
           <strong id="subtotalKRW">₩0</strong>
-        </div>
-        <div class="summaryRow">
-          <span>Estimated Subtotal (USD)</span>
-          <strong id="subtotalUSD">—</strong>
         </div>
 
         <div class="warn">
@@ -194,34 +184,23 @@
     const form = document.querySelector('form[name="product-inquiry"]');
     const itemsEl = document.getElementById('items');
     const addBtn = document.getElementById('addBtn');
-    const fxStatus = document.getElementById('fx_status');
 
     const subtotalKRWEl = document.getElementById('subtotalKRW');
-    const subtotalUSDEl = document.getElementById('subtotalUSD');
 
     const itemsCountHidden = document.getElementById('items_count');
     const totalQtyHidden = document.getElementById('total_qty');
 
     const subtotalKRWHidden = document.getElementById('subtotal_krw');
-    const subtotalUSDHidden = document.getElementById('subtotal_usd');
-
     const subtotalKRWDispHidden = document.getElementById('subtotal_krw_display');
-    const subtotalUSDDispHidden = document.getElementById('subtotal_usd_display');
 
     const itemsSummaryTA = document.getElementById('items_summary');
 
     const emailInput = document.getElementById('customer_email');
     const emailReplyToHidden = document.getElementById('email_replyto');
 
-    let fxRate = null;
-
     function formatKRW(n){
       try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
       catch(e){ return `₩${Math.round(n)}`; }
-    }
-    function formatUSD(n){
-      try { return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n); }
-      catch(e){ return `$${Math.round(n*100)/100}`; }
     }
 
     function buildProductOptions(selectEl){
@@ -249,23 +228,6 @@
       return Number.isFinite(n) ? n : 0;
     }
 
-    async function fetchFXRateKRWtoUSD(){
-      fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill">loading…</span>`;
-      try{
-        const url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/krw.json";
-        const res = await fetch(url, { cache: "no-store" });
-        const data = await res.json();
-        const rate = data?.krw?.usd;
-
-        if(!rate || !Number.isFinite(rate)) throw new Error("No rate");
-        fxRate = rate;
-        fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill ok">1 KRW = ${rate} USD</span>`;
-      }catch(e){
-        fxRate = null;
-        fxStatus.innerHTML = `Exchange rate (KRW → USD): <span class="pill bad">unavailable</span> (KRW subtotal still saved)`;
-      }
-    }
-
     function renumberNames(){
       const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
       items.forEach((item, idx) => {
@@ -273,7 +235,7 @@
         item.querySelector('select.product').name = `item_${n}_product`;
         item.querySelector('input.qty').name = `item_${n}_qty`;
         item.querySelector('input.unit_krw').name = `item_${n}_unit_krw`;
-        item.querySelector('input.line_usd').name = `item_${n}_line_total_usd`;
+        item.querySelector('input.line_krw').name = `item_${n}_line_total_krw`;
       });
       itemsCountHidden.value = String(items.length);
     }
@@ -289,7 +251,6 @@
       emailReplyToHidden.value = emailVal;
 
       let subtotalKRW = 0;
-      let subtotalUSD = 0;
       let totalQty = 0;
       const lines = [];
 
@@ -300,7 +261,7 @@
         const unitDisp = item.querySelector('input.unit_display');
         const lineDisp = item.querySelector('input.line_display');
         const unitKrwH = item.querySelector('input.unit_krw');
-        const lineUsdH = item.querySelector('input.line_usd');
+        const lineKrwH = item.querySelector('input.line_krw');
 
         const qty = Math.max(1, Number(qtyInput.value || 1));
         totalQty += qty;
@@ -310,43 +271,25 @@
 
         subtotalKRW += lineKRW;
         unitKrwH.value = String(unitKRW);
+        lineKrwH.value = String(lineKRW);
+
+        unitDisp.value = unitKRW ? formatKRW(unitKRW) : "—";
+        lineDisp.value = unitKRW ? formatKRW(lineKRW) : "—";
 
         const p = productSel.value || "(not selected)";
         lines.push(`${n}. ${p} x ${qty}`);
-
-        if(fxRate && Number.isFinite(fxRate)){
-          const unitUSD = unitKRW * fxRate;
-          const lineUSD = lineKRW * fxRate;
-
-          unitDisp.value = formatUSD(unitUSD);
-          lineDisp.value = formatUSD(lineUSD);
-
-          lineUsdH.value = String(Math.round(lineUSD * 100) / 100);
-          subtotalUSD += lineUSD;
-        }else{
-          unitDisp.value = "—";
-          lineDisp.value = "—";
-          lineUsdH.value = "0";
-        }
       });
 
       const subtotalKRWInt = Math.round(subtotalKRW);
-      const subtotalUSDRounded = fxRate ? Math.round(subtotalUSD*100)/100 : 0;
 
       subtotalKRWEl.textContent = formatKRW(subtotalKRWInt);
-      subtotalUSDEl.textContent = fxRate ? formatUSD(subtotalUSDRounded) : "—";
 
       itemsCountHidden.value = String(items.length);
       totalQtyHidden.value = String(totalQty);
 
-      // ✅ now these exist, so no crash
       subtotalKRWHidden.value = String(subtotalKRWInt);
-      subtotalUSDHidden.value = fxRate ? String(subtotalUSDRounded) : "0";
-
       subtotalKRWDispHidden.value = formatKRW(subtotalKRWInt);
-      subtotalUSDDispHidden.value = fxRate ? formatUSD(subtotalUSDRounded) : "";
 
-      // ✅ items_summary always set (line breaks preserved)
       itemsSummaryTA.value =
         `=== CUSTOMER INFO ===\n` +
         `Customer Name: ${customerName}\n` +
@@ -357,7 +300,6 @@
         `Items Count: ${items.length}\n` +
         `Total Qty: ${totalQty}\n` +
         `Subtotal KRW: ${subtotalKRWDispHidden.value}\n` +
-        `Subtotal USD: ${subtotalUSDDispHidden.value || "N/A"}\n` +
         `Shipping: NOT included (paid separately)\n` +
         `=== ITEMS ===\n` +
         `${lines.map(x => `- ${x}`).join("\n")}`;
@@ -403,7 +345,7 @@
       clone.querySelector('input.unit_display').value = "—";
       clone.querySelector('input.line_display').value = "—";
       clone.querySelector('input.unit_krw').value = "0";
-      clone.querySelector('input.line_usd').value = "0";
+      clone.querySelector('input.line_krw').value = "0";
 
       itemsEl.appendChild(clone);
       wireItemEvents(clone);
@@ -425,10 +367,7 @@
     });
 
     initExistingItems();
-    (async () => {
-      await fetchFXRateKRWtoUSD();
-      computeAndRender();
-    })();
+    computeAndRender();
   </script>
 </body>
 </html>
