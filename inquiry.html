@@ -81,10 +81,36 @@
             <option value="SG">Singapore</option>
             <option value="TW">Taiwan</option>
             <option value="CN">China</option>
+            <option value="EU">Europe</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <label>Destination Country</label>
+          <select name="country" id="country" required>
+            <option value="" disabled selected>Select</option>
+            <option value="US">United States</option>
+            <option value="HK">Hong Kong</option>
+            <option value="JP">Japan</option>
+            <option value="SG">Singapore</option>
+            <option value="TW">Taiwan</option>
+            <option value="CN">China</option>
             <option value="EU">Europe (Other)</option>
             <option value="OTHER">Other</option>
           </select>
+          
+          <!-- ✅ 여기(</select> 아래, muted 위)에 추가 -->
+          <div id="otherCountryWrap" style="display:none;margin-top:10px;">
+            <label>Other Country (Please specify)</label>
+            <input type="text" name="country_other" id="country_other" placeholder="e.g., Australia" />
+            <div class="muted">Please enter your country name.</div>
+          </div>
+
           <div class="muted">All prices are shown in KRW.</div>
+          <!-- Only show when Country = OTHER -->
+          <div id="otherCountryWrap" style="display:none;margin-top:10px;">
+            <label>Other Country (Please specify)</label>
+            <input type="text" name="country_other" id="country_other" placeholder="e.g., Australia" />
+            <div class="muted">Please enter your country name.</div>
+          </div>
         </div>
 
         <div>
@@ -197,6 +223,10 @@
 
     const emailInput = document.getElementById('customer_email');
     const emailReplyToHidden = document.getElementById('email_replyto');
+    const countrySelect = document.getElementById('country');
+    const otherCountryWrap = document.getElementById('otherCountryWrap');
+    const otherCountryInput = document.getElementById('country_other');
+
 
     function formatKRW(n){
       try { return new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(n); }
@@ -244,7 +274,9 @@
       const items = Array.from(itemsEl.querySelectorAll('[data-item]'));
 
       const customerName = document.getElementById('customer_name').value || "-";
-      const countryVal = document.getElementById('country').value || "";
+      const countryValRaw = countrySelect.value || "";
+      const otherVal = (otherCountryInput?.value || "").trim();
+      const countryVal = (countryValRaw === "OTHER" && otherVal) ? `OTHER - ${otherVal}` : countryValRaw;
       const emailVal = emailInput.value || "";
       const shipVal = document.getElementById('shipping_destination').value || "";
 
@@ -356,7 +388,20 @@
     addBtn.addEventListener('click', addItem);
 
     document.getElementById('customer_name').addEventListener('input', computeAndRender);
-    document.getElementById('country').addEventListener('change', computeAndRender);
+    function toggleOtherCountry(){
+      const isOther = countrySelect.value === "OTHER";
+      otherCountryWrap.style.display = isOther ? "block" : "none";
+      otherCountryInput.required = isOther;
+      if(!isOther) otherCountryInput.value = "";
+    }
+    
+    countrySelect.addEventListener('change', () => {
+      toggleOtherCountry();
+      computeAndRender();
+    });
+    
+    otherCountryInput.addEventListener('input', computeAndRender);
+    
     document.getElementById('shipping_destination').addEventListener('input', computeAndRender);
     emailInput.addEventListener('input', computeAndRender);
 
@@ -365,6 +410,8 @@
       computeAndRender();
       // DO NOT preventDefault (let Netlify handle normal submit)
     });
+
+    toggleOtherCountry();
 
     initExistingItems();
     computeAndRender();
